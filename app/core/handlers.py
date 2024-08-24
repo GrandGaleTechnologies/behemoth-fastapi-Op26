@@ -3,7 +3,12 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import ORJSONResponse
 
-from app.common.exceptions import NotFound
+from app.common.exceptions import CustomHTTPException
+from app.core.settings import get_settings
+
+
+# Globals
+settings = get_settings()
 
 
 async def base_exception_handler(_: Request, exc: Exception):
@@ -11,6 +16,8 @@ async def base_exception_handler(_: Request, exc: Exception):
     Exception handler for 'NotFound' exception
     """
     # Send email to staff
+    if settings.DEBUG:
+        print(exc)
     # sendgrid.send_email()
     return ORJSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -44,7 +51,7 @@ async def request_validation_exception_handler(_: Request, exc: RequestValidatio
     )
 
 
-async def not_found_exception_handler(_: Request, exc: NotFound):
+async def custom_http_exception_handler(_: Request, exc: CustomHTTPException):
     """
     Exception handler for 'NotFound' exception
     """

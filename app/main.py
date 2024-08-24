@@ -8,12 +8,11 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import ORJSONResponse
 from sqlalchemy.orm import Session
 
-from app.author.apis import router as author_router
 from app.common.dependencies import get_session
-from app.common.exceptions import NotFound
+from app.common.exceptions import CustomHTTPException
 from app.core.handlers import (
     base_exception_handler,
-    not_found_exception_handler,
+    custom_http_exception_handler,
     request_validation_exception_handler,
 )
 
@@ -66,7 +65,7 @@ app.add_middleware(
 # Exception Handlers
 app.add_exception_handler(Exception, base_exception_handler)
 app.add_exception_handler(RequestValidationError, request_validation_exception_handler)  # type: ignore
-app.add_exception_handler(NotFound, not_found_exception_handler)  # type: ignore
+app.add_exception_handler(CustomHTTPException, custom_http_exception_handler)  # type: ignore
 
 
 # Healthcheck
@@ -77,4 +76,3 @@ async def health(_: Session = Depends(get_session)):
 
 
 # Routers
-app.include_router(author_router, prefix="/author", tags=["Author APIs"])
