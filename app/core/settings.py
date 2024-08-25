@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     # App
     DEBUG: bool = os.environ.get("DEBUG")  # type: ignore
 
+    # Security
+    SECRET_KEY: str = os.environ.get("SECRET_KEY")  # type: ignore
+    ACCESS_TOKEN_EXPIRE_MIN: int = os.environ.get("ACCESS_TOKEN_EXPIRE_MIN")  # type: ignore
+    ENCRYPTION_KEY: str = os.environ.get("ENCRYPTION_KEY")  # type: ignore
+
     # DB Settings
     POSTGRES_DATABASE_URL: str = os.environ.get("POSTGRES_DATABASE_URL")  # type: ignore
 

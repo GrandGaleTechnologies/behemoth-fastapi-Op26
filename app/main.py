@@ -15,6 +15,8 @@ from app.core.handlers import (
     custom_http_exception_handler,
     request_validation_exception_handler,
 )
+from app.poi.apis import router as poi_router
+from app.user.apis import router as user_router
 
 
 # Lifespan (startup, shutdown)
@@ -76,3 +78,5 @@ async def health(_: Session = Depends(get_session)):
 
 
 # Routers
+app.include_router(user_router, prefix="/user", tags=["User APIs"])
+app.include_router(poi_router, prefix="/poi", tags=["POI APIs"])

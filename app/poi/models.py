@@ -63,7 +63,7 @@ class POI(DBBase):
     residential_addresses: Mapped[list["ResidentialAddress"]] = relationship(
         "ResidentialAddress", backref="pois"
     )
-    known_associates: Mapped[list["KnownAssosicate"]] = relationship(
+    known_associates: Mapped[list["KnownAssociate"]] = relationship(
         "KnownAssosicate", backref="pois"
     )
     employment_history: Mapped[list["EmploymentHistory"]] = relationship(
@@ -133,7 +133,7 @@ class ResidentialAddress(DBBase):
     deleted_at = Column(String, nullable=True)
 
 
-class KnownAssosicate(DBBase):
+class KnownAssociate(DBBase):
     """
     Database model for known associates of the poi
     """
