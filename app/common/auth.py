@@ -18,7 +18,7 @@ class TokenGenerator:
         self.secret_key = secret_key
         self.expire_in = expire_in
 
-    def generate(self, sub: str):
+    async def generate(self, sub: str):
         """This method generates a JWT token.
 
         Args:
@@ -51,7 +51,7 @@ class TokenGenerator:
             algorithm="HS256",
         )
 
-    def verify(self, token: str, sub_head: str, _: bool = True):
+    async def verify(self, token: str, sub_head: str, _: bool = True):
         """This method verifies the token.
 
         Args:

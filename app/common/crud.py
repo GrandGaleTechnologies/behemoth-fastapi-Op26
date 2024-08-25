@@ -1,4 +1,4 @@
-from typing import Generic, Type, TypeVar
+from typing import Any, Generic, Type, TypeVar
 
 from sqlalchemy.orm import Session
 
@@ -15,7 +15,7 @@ class CRUDBase(Generic[T]):
         self.db = db
         self.qs = db.query(model)
 
-    async def create(self, *, data: dict):
+    async def create(self, *, data: dict[str, Any]):
         """
         Create object
         """

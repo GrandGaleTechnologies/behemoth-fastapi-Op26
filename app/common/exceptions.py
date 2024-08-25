@@ -9,6 +9,15 @@ class CustomHTTPException(Exception):
         self.loc = loc
 
 
+class BadRequest(CustomHTTPException):
+    """
+    Common base exception for 400 BAD REQUEST exceptions
+    """
+
+    def __init__(self, msg: str, *, loc: list | None = None):
+        super().__init__(msg, status_code=400, loc=loc)
+
+
 class Unauthorized(CustomHTTPException):
     """
     Common base class for 401 UNAUTHORIZED exceptions
@@ -16,3 +25,21 @@ class Unauthorized(CustomHTTPException):
 
     def __init__(self, msg: str, *, loc: list | None = None):
         super().__init__(msg, status_code=401, loc=loc)
+
+
+class Forbidden(CustomHTTPException):
+    """
+    Common base class for 403 FORBIDDEN exceptions
+    """
+
+    def __init__(self, msg: str = "Forbidden", *, loc: list | None = None):
+        super().__init__(msg, status_code=403, loc=loc)
+
+
+class NotFound(CustomHTTPException):
+    """
+    Common base class for 404 NOT FOUND exceptions
+    """
+
+    def __init__(self, msg: str, *, loc: list | None = None):
+        super().__init__(msg, status_code=404, loc=loc)

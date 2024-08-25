@@ -1,6 +1,11 @@
 from datetime import datetime
 
+import cryptography
 from cryptography.fernet import Fernet
+import cryptography.fernet
+from sqlalchemy import Column
+
+from app.common.exceptions import Forbidden
 
 
 class EncryptionManager:
@@ -15,26 +20,35 @@ class EncryptionManager:
         """
         Encrypt string
         """
+        print("enc", data)
         return self.cipher.encrypt(data.encode()).decode()
 
-    def decrypt_str(self, encrypted_data: str):
+    def decrypt_str(self, data: str | Column[str]):
         """
         Decrypt string
         """
-        return self.cipher.decrypt(encrypted_data.encode()).decode()
+        print("dec", data)
+        try:
+            return self.cipher.decrypt(data.encode()).decode()
+        except cryptography.fernet.InvalidToken:
+            raise Forbidden()
 
-    def encrypt_boolean(self, value: bool):
+    def encrypt_boolean(self, data: bool):
         """
         Encrypt boolean
         """
-        bool_str = str(value)  # Convert boolean to string ("True" or "False")
+        bool_str = str(data)  # Convert boolean to string ("True" or "False")
         return self.encrypt_str(bool_str)
 
-    def decrypt_boolean(self, encrypted_data: str):
+    def decrypt_boolean(self, data: str | Column[str]):
         """
         Decrypt boolean
         """
-        bool_str = self.decrypt_str(encrypted_data)  # Decrypt to string
+        try:
+            bool_str = self.decrypt_str(data)  # Decrypt to string
+        except cryptography.fernet.InvalidToken:
+            raise Forbidden()
+
         return bool_str == "True"  # Convert string back to boolean
 
     def encrypt_datetime(self, dt: datetime):
@@ -44,9 +58,13 @@ class EncryptionManager:
         dt_str = dt.isoformat()  # Convert datetime to ISO 8601 string format
         return self.encrypt_str(dt_str)
 
-    def decrypt_datetime(self, encrypted_data: str):
+    def decrypt_datetime(self, data: str | Column[str]):
         """
         Decrypt datetime
         """
-        dt_str = self.decrypt_str(encrypted_data)  # Decrypt to ISO 8601 string
+        try:
+            dt_str = self.decrypt_str(data)  # Decrypt to ISO 8601 string
+        except cryptography.fernet.InvalidToken:
+            raise Forbidden()
+
         return datetime.fromisoformat(dt_str)  # Convert string back to datetime
