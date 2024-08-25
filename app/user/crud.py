@@ -20,3 +20,12 @@ class LoginAttemptCRUD(CRUDBase[models.LoginAttempt]):
 
     def __init__(self, db: Session):
         super().__init__(models.LoginAttempt, db)
+
+
+class AuditLogCRUD(CRUDBase[models.AuditLog]):
+    """
+    CRUD Class for audit logs
+    """
+
+    def __init__(self, db: Session):
+        super().__init__(models.AuditLog, db)
