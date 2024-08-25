@@ -34,7 +34,7 @@ async def route_user_login(
     user = await services.login_user(credential=credentials_in, db=db)
 
     # Generate access token
-    token = token_generator.generate(sub=f"USER-{user.badge_num}")
+    token = await token_generator.generate(sub=f"USER-{user.badge_num}")
 
     return {"data": {"token": token}}
 
