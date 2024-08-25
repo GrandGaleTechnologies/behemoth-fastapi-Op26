@@ -64,7 +64,7 @@ class POI(DBBase):
         "ResidentialAddress", backref="pois"
     )
     known_associates: Mapped[list["KnownAssociate"]] = relationship(
-        "KnownAssosicate", backref="pois"
+        "KnownAssociate", backref="pois"
     )
     employment_history: Mapped[list["EmploymentHistory"]] = relationship(
         "EmploymentHistory", backref="pois"

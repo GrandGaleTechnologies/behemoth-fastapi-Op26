@@ -1,4 +1,5 @@
-from datetime import date, datetime, time
+from datetime import date, time
+
 from pydantic import BaseModel, Field
 
 
@@ -7,10 +8,8 @@ class CreateOffense(BaseModel):
     Create schema for offenses
     """
 
-    id: int = Field(description="Unique identifier for the offense")
     name: str = Field(description="Name of the offense")
     description: str = Field(description="Description of the offense")
-    created_at: datetime = Field(description="Creation timestamp")
 
 
 class CreatePOI(BaseModel):
