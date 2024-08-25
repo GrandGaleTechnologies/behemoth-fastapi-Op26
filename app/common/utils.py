@@ -1,4 +1,13 @@
+import calendar
 import difflib
+
+
+async def get_last_day_of_month(year: int, month: int):
+    """
+    Get the last day of a month
+    """
+    _, last_day = calendar.monthrange(year, month)
+    return last_day
 
 
 async def find_all_matches(query: str, options: list[str], cutoff: float = 0.5):

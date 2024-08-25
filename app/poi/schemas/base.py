@@ -243,6 +243,3 @@ class POIStatistics(BaseModel):
     poi_report_age: list[TopPOIAge] = Field(
         max_length=4, description="The top poi based on age"
     )
-    poi_range_state: list[TopPOIState] = Field(
-        max_length=4, description="The top poi based on state"
-    )

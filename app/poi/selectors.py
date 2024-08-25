@@ -1,14 +1,16 @@
 # pylint: disable=redefined-builtin
+from datetime import datetime
 from typing import cast
-from sqlalchemy.orm import Session, Query
+
+from sqlalchemy.orm import Query, Session
 
 from app.common.encryption import EncryptionManager
 from app.common.paginators import paginate
 from app.common.types import PaginationParamsType
-from app.common.utils import find_all_matches, paginate_list
+from app.common.utils import find_all_matches, get_last_day_of_month, paginate_list
 from app.core.settings import get_settings
-from app.poi import models
-from app.poi.crud import OffenseCRUD
+from app.poi import models, utils
+from app.poi.crud import POICRUD, OffenseCRUD
 from app.poi.exceptions import OffeseNotFound
 
 # Globals
@@ -101,3 +103,85 @@ async def get_paginated_offense_list(pagination: PaginationParamsType, db: Sessi
     )
 
     return results, qs.count()
+
+
+async def get_poi_statistics(db: Session):
+    # Init crud
+    poi_crud = POICRUD(db=db)
+
+    # Init qs
+    qs = cast(Query[models.POI], await poi_crud.get_all(return_qs=True))
+
+    # Decrypted poi list
+    objs: list[models.POI] = []
+    for poi in qs.all():
+        # Check: poi was not deleted
+        if encryption_manager.decrypt_boolean(data=poi.is_deleted):
+            continue
+
+        objs.append(poi)
+
+    # Get tno_pois
+    tno_pois = qs.count()
+
+    # Edge Check: last month is in last year
+    year = datetime.now().year
+    last_month = datetime.now().month - 1
+
+    if datetime.now().month < last_month:
+        year = year - 1
+
+    # Get last month range
+    last_month_start = datetime(year=year, month=last_month, day=1)
+    last_month_end = datetime(
+        year=year,
+        month=last_month,
+        day=await get_last_day_of_month(year=year, month=last_month),
+    )
+
+    # Get tno pois last month
+    tno_pois_last_month = 0
+    for poi in objs:
+        created_at = encryption_manager.decrypt_datetime(poi.created_at)
+
+        if last_month_start <= created_at <= last_month_end:
+            tno_pois_last_month += 1
+
+    # Get curr month range
+    year = datetime.now().year
+    month = datetime.now().month
+
+    curr_month_start = datetime(year=year, month=month, day=1)
+
+    # Get tno pois last month
+    tno_pois_curr_month = len(
+        [
+            poi
+            for poi in objs
+            if encryption_manager.decrypt_datetime(poi.created_at) > curr_month_start
+        ]
+    )
+
+    # Get poi report on convictions
+    top_convictions = []
+
+    top_offenses = await utils.get_top_offenses(db=db)
+    for offense_name, value in top_offenses:
+        top_convictions.append({"offense_name": offense_name, "value": value})
+
+    # Get poi report on age range
+    top_age_range = await utils.get_top_poi_age_ranges(
+        dob_list=[
+            encryption_manager.decrypt_date(data=str(poi.dob))
+            for poi in objs
+            if bool(poi.dob)
+        ]
+    )
+
+    return {
+        "tno_pois": tno_pois,
+        "tno_pois_last_month": tno_pois_last_month,
+        "tno_pois_curr_month": tno_pois_curr_month,
+        "poi_report_conviction": top_convictions,
+        "poi_report_age": top_age_range,
+    }
