@@ -62,6 +62,9 @@ class POI(DBBase):
     )
     deleted_at = Column(String, nullable=True)
 
+    application: Mapped["POIApplicationProcess"] = relationship(
+        "POIApplicationProcess", backref="pois"
+    )
     veteran_status: Mapped["VeteranStatus"] = relationship(
         "VeteranStatus", backref="pois"
     )

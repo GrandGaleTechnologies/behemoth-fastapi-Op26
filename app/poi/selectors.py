@@ -11,7 +11,7 @@ from app.common.utils import find_all_matches, get_last_day_of_month, paginate_l
 from app.core.settings import get_settings
 from app.poi import models, utils
 from app.poi.crud import POICRUD, OffenseCRUD
-from app.poi.exceptions import OffeseNotFound
+from app.poi.exceptions import OffeseNotFound, POINotFound
 
 # Globals
 settings = get_settings()
@@ -106,6 +106,21 @@ async def get_paginated_offense_list(pagination: PaginationParamsType, db: Sessi
 
 
 async def get_poi_statistics(db: Session):
+    """
+    Get POI Statistics
+
+    Args:
+        db (Session): The database session
+
+    Returns:
+        dict: {
+        "tno_pois": the total number of pois,
+        "tno_pois_last_month": the total number of pois last month,
+        "tno_pois_curr_month": the total number of pois this month,
+        "poi_report_conviction": the list of the top poi convictions,
+        "poi_report_age": the list of the top poi age ranges
+    }
+    """
     # Init crud
     poi_crud = POICRUD(db=db)
 
@@ -185,3 +200,29 @@ async def get_poi_statistics(db: Session):
         "poi_report_conviction": top_convictions,
         "poi_report_age": top_age_range,
     }
+
+
+async def get_poi_by_id(id: int, db: Session, raise_exc: bool = True):
+    """
+    Get poi obj using its ID
+
+    Args:
+        id (int): The ID of the poi
+        db (Session): The database session
+        raise_exc (bool = True): raise a 404 if obj is not found
+
+    Raises:
+        POINotFound
+
+    Returns:
+        models.POI | None
+    """
+    # Init crud
+    poi_crud = POICRUD(db=db)
+
+    # Get poi
+    obj = await poi_crud.get(id=id)
+    if not obj and raise_exc:
+        raise POINotFound()
+
+    return obj

@@ -47,6 +47,32 @@ class POI(BaseModel):
     is_pinned: bool = Field(description="Pinned status")
 
 
+class POIApplicationProcess(BaseModel):
+    """
+    Base schema for poi application process
+    """
+
+    id: int = Field(description="The ID of the application proces")
+    other_profile: bool = Field(
+        description="Indicates if poi application has reached the other_profile section"
+    )
+    employment: bool = Field(
+        description="Indicates if poi application has reached the employment section"
+    )
+    veteran_status: bool = Field(
+        description="Indicates if poi application has reached the veteran_status section"
+    )
+    education: bool = Field(
+        description="Indicates if poi application has reached the education section"
+    )
+    case_file: bool = Field(
+        description="Indicates if poi application has reached the case_file section"
+    )
+    fingerprints: bool = Field(
+        description="Indicates if poi application has reached the fingerprints section"
+    )
+
+
 class POISummary(BaseModel):
     """
     Base schema for poi summary
@@ -66,6 +92,7 @@ class POIBaseInformation(BaseModel):
     Base schema for base POI information
     """
 
+    id: int = Field(description="The ID of the poi")
     pfp: str | None = Field(default=None, description="Profile picture URL")
     full_name: str = Field(description="Full name of the POI")
     alias: str = Field(description="Alias of the POI")

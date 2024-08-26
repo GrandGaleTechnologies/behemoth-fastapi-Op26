@@ -8,3 +8,12 @@ class OffeseNotFound(NotFound):
 
     def __init__(self, *, loc: list | None = None):
         super().__init__("Offense Not Found", loc=loc)
+
+
+class POINotFound(NotFound):
+    """
+    Exception for 404 POI Not Found
+    """
+
+    def __init__(self, *, loc: list | None = None):
+        super().__init__("POI Not Found", loc=loc)

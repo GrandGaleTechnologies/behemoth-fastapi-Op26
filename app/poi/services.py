@@ -11,7 +11,7 @@ from app.common.exceptions import BadRequest
 from app.common.utils import dict_to_string
 from app.core.settings import get_settings
 from app.poi import models
-from app.poi.crud import POICRUD, IDDocumentCRUD, OffenseCRUD
+from app.poi.crud import POICRUD, IDDocumentCRUD, OffenseCRUD, POIApplicationProcess
 from app.poi.schemas import create, edit
 from app.user import models as user_models
 from app.user.crud import AuditLogCRUD
@@ -191,3 +191,23 @@ async def create_poi(
     )
 
     return poi
+
+
+async def create_poi_application_process(poi: models.POI, db: Session):
+    """
+    Create poi application process
+
+    Args:
+        poi (models.POI): The poi obj
+        db (Session): The database session
+
+    Returns:
+        models.POIApplicationProcess
+    """
+    # Init crud
+    application_crud = POIApplicationProcess(db=db)
+
+    # Create application process
+    application_process = await application_crud.create(data={"poi_id": poi.id})
+
+    return application_process

@@ -20,6 +20,21 @@ async def format_offense(offense: models.Offense):
     }
 
 
+async def format_poi_application(application: models.POIApplicationProcess):
+    """
+    Format poi application to dict
+    """
+    return {
+        "id": application.id,
+        "other_profile": encrypt_man.decrypt_boolean(application.other_profile),
+        "employment": encrypt_man.decrypt_boolean(application.employment),
+        "veteran_status": encrypt_man.decrypt_boolean(application.veteran_status),
+        "education": encrypt_man.decrypt_boolean(application.education),
+        "case_file": encrypt_man.decrypt_boolean(application.case_file),
+        "fingerprints": encrypt_man.decrypt_boolean(application.fingerprints),
+    }
+
+
 async def format_poi_base(poi: models.POI):
     """
     Format poi obj to poi base dict

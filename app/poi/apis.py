@@ -1,8 +1,10 @@
+from typing import cast
 from fastapi import APIRouter, status
 
 from app.common.annotations import DatabaseSession
-from app.poi import services
-from app.poi.formatters import format_poi_base
+from app.common.exceptions import NotFound
+from app.poi import models, selectors, services
+from app.poi.formatters import format_poi_application, format_poi_base
 from app.poi.routes.offense import router as poi_offense_router
 from app.poi.schemas import create, response
 from app.user.annotated import CurrentUser
@@ -11,6 +13,29 @@ router = APIRouter()
 
 # Include routers
 router.include_router(poi_offense_router, prefix="/offense", tags=["Offense Endpoints"])
+
+
+@router.get(
+    "/{poi_id}/application",
+    summary="Get POI Application Progress",
+    response_description="The details of the application process",
+    status_code=status.HTTP_200_OK,
+    response_model=response.POIApplicationProcessResponse,
+)
+async def route_poi_application_process(
+    poi_id: int, _: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint returns the poi's application process
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    if not poi.application:
+        raise NotFound("POI Application not found")
+
+    return {"data": await format_poi_application(application=poi.application)}
 
 
 @router.post(
@@ -31,5 +56,8 @@ async def route_poi_create(
 
     # Create poi base information
     poi = await services.create_poi(user=curr_user, data=poi_in, db=db)
+
+    # Start application process
+    await services.create_poi_application_process(poi=poi, db=db)
 
     return {"data": await format_poi_base(poi=poi)}
