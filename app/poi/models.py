@@ -307,3 +307,32 @@ class Fingerprint(DBBase):
     edited_at = Column(String, nullable=True)
     created_at = Column(String, nullable=False)
     deleted_at = Column(String, nullable=True)
+
+
+class POIApplicationProcess(DBBase):
+    """
+    Database model for poi application process
+    """
+
+    __tablename__ = "poi_application_processes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    poi_id = Column(Integer, ForeignKey("pois.id", ondelete="CASCADE"), nullable=False)
+    other_profile = Column(
+        String, default=encryption_manager.encrypt_boolean(False), nullable=False
+    )
+    employment = Column(
+        String, default=encryption_manager.encrypt_boolean(False), nullable=False
+    )
+    veteran_status = Column(
+        String, default=encryption_manager.encrypt_boolean(False), nullable=False
+    )
+    education = Column(
+        String, default=encryption_manager.encrypt_boolean(False), nullable=False
+    )
+    case_file = Column(
+        String, default=encryption_manager.encrypt_boolean(False), nullable=False
+    )
+    fingerprints = Column(
+        String, default=encryption_manager.encrypt_boolean(False), nullable=False
+    )
