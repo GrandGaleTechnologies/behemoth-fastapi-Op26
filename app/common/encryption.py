@@ -20,14 +20,12 @@ class EncryptionManager:
         """
         Encrypt string
         """
-        print("enc", data)
         return self.cipher.encrypt(data.encode()).decode()
 
     def decrypt_str(self, data: str | Column[str]):
         """
         Decrypt string
         """
-        print("dec", data)
         try:
             return self.cipher.decrypt(data.encode()).decode()
         except cryptography.fernet.InvalidToken:
@@ -76,7 +74,7 @@ class EncryptionManager:
         dt_str = dt.isoformat()  # Convert date to ISO 8601 string format
         return self.encrypt_str(dt_str)
 
-    def decrypt_date(self, data: str):
+    def decrypt_date(self, data: str | Column[str]):
         """
         Decrypt date
         """

@@ -3,7 +3,6 @@ from fastapi import APIRouter, status
 from app.common.annotations import DatabaseSession
 from app.common.auth import TokenGenerator
 from app.core.settings import get_settings
-from app.poi import selectors as poi_selectors
 from app.user import services
 from app.user.annotated import CurrentUser
 from app.user.schemas import base, response
@@ -48,7 +47,7 @@ async def route_user_login(
     status_code=status.HTTP_200_OK,
     response_model=response.UserDashboardResponse,
 )
-async def route_user_dashboard(_: CurrentUser, db: DatabaseSession):
+async def route_user_dashboard(_: CurrentUser):
     """
     This endpoint returns the user's dashboard details
     """

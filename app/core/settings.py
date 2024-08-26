@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     # App
     DEBUG: bool = os.environ.get("DEBUG")  # type: ignore
+    UPLOAD_DIR: str = os.environ.get("UPLOAD_DIR")  # type: ignore
 
     # Security
     SECRET_KEY: str = os.environ.get("SECRET_KEY")  # type: ignore

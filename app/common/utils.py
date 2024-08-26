@@ -10,6 +10,13 @@ async def get_last_day_of_month(year: int, month: int):
     return last_day
 
 
+async def dict_to_string(d: dict):
+    """
+    Convert dict to 'key=value, ' string
+    """
+    return ", ".join([f"{key}={value}" for key, value in d.items()])
+
+
 async def find_all_matches(query: str, options: list[str], cutoff: float = 0.5):
     """
     Get all close matches from the options list based on the cutoff similarity

@@ -61,6 +61,24 @@ class POISummary(BaseModel):
     created_at: date = Field(description="The date the poi was created")
 
 
+class POIBaseInformation(BaseModel):
+    """
+    Base schema for base POI information
+    """
+
+    pfp: str | None = Field(default=None, description="Profile picture URL")
+    full_name: str = Field(description="Full name of the POI")
+    alias: str = Field(description="Alias of the POI")
+    dob: date | None = Field(default=None, description="Date of birth")
+    pob: str | None = Field(default=None, description="Place of birth")
+    nationality: str | None = Field(default=None, description="Nationality")
+    religion: str | None = Field(default=None, description="Religion")
+    id_documents: list["IDDocument"] | None = Field(
+        default=None, description="The list of ID Documents"
+    )
+    created_at: datetime = Field(description="The time the poi was created")
+
+
 class IDDocument(BaseModel):
     """
     Base schema for ID Documents

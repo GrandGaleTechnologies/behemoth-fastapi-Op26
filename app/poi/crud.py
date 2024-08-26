@@ -22,6 +22,15 @@ class POICRUD(CRUDBase[models.POI]):
         super().__init__(models.POI, db)
 
 
+class IDDocumentCRUD(CRUDBase[models.IDDocument]):
+    """
+    CRUD Class for ID Documents
+    """
+
+    def __init__(self, db: Session):
+        super().__init__(models.IDDocument, db)
+
+
 class POIOffenseCRUD(CRUDBase[models.POIOffense]):
     """
     CRUD Class for poi offenses

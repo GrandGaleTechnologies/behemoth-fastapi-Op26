@@ -1,12 +1,17 @@
+import base64
+import binascii
+import os
 from datetime import datetime
 
+import aiofiles
 from sqlalchemy.orm import Session
 
 from app.common.encryption import EncryptionManager
 from app.common.exceptions import BadRequest
+from app.common.utils import dict_to_string
 from app.core.settings import get_settings
 from app.poi import models
-from app.poi.crud import OffenseCRUD
+from app.poi.crud import POICRUD, IDDocumentCRUD, OffenseCRUD
 from app.poi.schemas import create, edit
 from app.user import models as user_models
 from app.user.crud import AuditLogCRUD
@@ -117,3 +122,72 @@ async def edit_offense(
     )
 
     return offense
+
+
+async def create_poi(
+    user: user_models.User, data: create.POIBaseInformationCreate, db: Session
+):
+    # Init crud
+    poi_crud = POICRUD(db=db)
+    id_crud = IDDocumentCRUD(db=db)
+
+    # encrypt data
+    encrypted_poi = {
+        "full_name": encryption_manager.encrypt_str(data.full_name),
+        "alias": encryption_manager.encrypt_str(data.alias),
+        "dob": encryption_manager.encrypt_date(data.dob) if data.dob else None,
+        "pob": encryption_manager.encrypt_str(data.pob) if data.pob else None,
+        "nationality": encryption_manager.encrypt_str(data.nationality)
+        if data.nationality
+        else None,
+        "religion": encryption_manager.encrypt_str(data.religion)
+        if data.religion
+        else None,
+        "is_completed": encryption_manager.encrypt_boolean(data=False),
+    }
+
+    # Create poi
+    poi = await poi_crud.create(data=encrypted_poi)
+
+    # Create ID documents
+    if data.id_documents:
+        _ = [
+            await id_crud.create(
+                data={
+                    "poi_id": poi.id,
+                    "type": encryption_manager.encrypt_str(doc.type),
+                    "id_number": encryption_manager.encrypt_str(doc.id_number),
+                },
+            )
+            for doc in data.id_documents
+        ]
+
+    # Create file for pfp
+    if data.pfp:
+        # Decode string
+        try:
+            img_data = base64.b64decode(data.pfp)
+        except binascii.Error:
+            raise BadRequest("Invalid pfp url bytes", loc=["body", "pfp"])
+
+        # Save data to file
+        loc = f"{settings.UPLOAD_DIR}/poi/{poi.id}/pfp/pfp.jpeg"
+        os.makedirs(os.path.dirname(loc), exist_ok=True)
+
+        async with aiofiles.open(loc, "wb") as file:
+            await file.write(img_data)
+
+        # Set url
+        poi.pfp_url = encryption_manager.encrypt_str(file.name)  # type: ignore
+        db.commit()
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="poi",
+        action=f"create:{poi.id}",
+        notes=await dict_to_string(data.model_dump()),
+        db=db,
+    )
+
+    return poi

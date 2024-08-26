@@ -1,7 +1,7 @@
 from pydantic import Field
 
 from app.common.schemas import PaginatedResponseSchema, ResponseSchema
-from app.poi.schemas.base import Offense
+from app.poi.schemas.base import Offense, POIBaseInformation
 
 
 class OffenseResponse(ResponseSchema):
@@ -29,3 +29,12 @@ class PaginatedOffenseListResponse(PaginatedResponseSchema):
 
     msg: str = Field(default="Successfully retrieved offenses")
     data: list[Offense] = Field(description="The list of offenses")
+
+
+class POIBaseInformationResponse(ResponseSchema):
+    """
+    Response schema for poi's
+    """
+
+    msg: str = Field(default="POI successfully retreieved")
+    data: POIBaseInformation = Field(description="The details of the poi")

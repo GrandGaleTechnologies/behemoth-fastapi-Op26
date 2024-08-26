@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy import Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, relationship
 
@@ -43,12 +44,22 @@ class POI(DBBase):
     last_seen_date = Column(String, nullable=True)
     last_seen_time = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
-    is_completed = Column(String, nullable=False)
-    is_pinned = Column(String, nullable=False)
+    is_completed = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
+    is_pinned = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
 
-    is_deleted = Column(String, nullable=False)
+    is_deleted = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
     edited_at = Column(String, nullable=True)
-    created_at = Column(String, nullable=False)
+    created_at = Column(
+        String,
+        nullable=False,
+        default=encryption_manager.encrypt_datetime(datetime.now()),
+    )
     deleted_at = Column(String, nullable=True)
 
     veteran_status: Mapped["VeteranStatus"] = relationship(
@@ -89,9 +100,15 @@ class IDDocument(DBBase):
     poi_id = Column(Integer, ForeignKey("pois.id", ondelete="CASCADE"), nullable=False)
     type = Column(String, nullable=False)
     id_number = Column(String, nullable=False)
-    is_deleted = Column(String, nullable=False)
+    is_deleted = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
     edited_at = Column(String, nullable=True)
-    created_at = Column(String, nullable=False)
+    created_at = Column(
+        String,
+        nullable=False,
+        default=encryption_manager.encrypt_datetime(datetime.now()),
+    )
     deleted_at = Column(String, nullable=True)
 
 
