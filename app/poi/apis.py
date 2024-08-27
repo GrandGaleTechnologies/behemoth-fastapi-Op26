@@ -8,6 +8,7 @@ from app.poi.formatters import format_poi_application, format_poi_base
 from app.poi.routes.offense import router as poi_offense_router
 from app.poi.schemas import create, response
 from app.user.annotated import CurrentUser
+from app.user.services import create_log
 
 router = APIRouter()
 
@@ -59,5 +60,31 @@ async def route_poi_create(
 
     # Start application process
     await services.create_poi_application_process(poi=poi, db=db)
+
+    return {"data": await format_poi_base(poi=poi)}
+
+
+@router.get(
+    "/{poi_id}/base",
+    summary="Get POI Base information",
+    response_description="The poi's base information",
+    status_code=status.HTTP_200_OK,
+    response_model=response.POIBaseInformationResponse,
+)
+async def route_poi_base_info(poi_id: int, curr_user: CurrentUser, db: DatabaseSession):
+    """
+    This endpoint returns the poi's base information
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="poi",
+        action=f"get:{poi.id}-base",
+        db=db,
+    )
 
     return {"data": await format_poi_base(poi=poi)}

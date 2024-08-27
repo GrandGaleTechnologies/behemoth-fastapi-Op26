@@ -20,8 +20,8 @@ async def create_log(
     user: models.User,
     resource: str,
     action: str,
-    notes: str | Column[str] | None,
     db: Session,
+    notes: str | Column[str] | None = None,
 ):
     """
     Create audit log
