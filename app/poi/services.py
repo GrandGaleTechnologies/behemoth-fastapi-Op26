@@ -193,6 +193,83 @@ async def create_poi(
     return poi
 
 
+async def edit_poi(
+    user: user_models.User,
+    poi: models.POI,
+    data: edit.POIBaseInformationEdit,
+    db: Session,
+):
+    """
+    Edit poi base information
+
+    Args:
+        user (user_models.User): The user obj
+        poi (modes.POI): The poi obj
+        data (edit.POIBaseInformationEdit): The poi's edit
+        db (Session): The database session
+
+    Returns:
+        models.POI
+    """
+    # type mang:
+    encrypt_man_dict = {
+        "str": {
+            "enc": encryption_manager.encrypt_str,
+            "dec": encryption_manager.decrypt_str,
+        },
+        "date": {
+            "enc": encryption_manager.encrypt_date,
+            "dec": encryption_manager.decrypt_date,
+        },
+    }
+
+    # init changelog
+    changelog = ""
+
+    # edit info
+    poi_dict = poi.__dict__
+    for field, value in data.model_dump(exclude=["pfp"]).items():  # type: ignore
+        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
+        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+
+        if dec(poi_dict[field]) != value:
+            changelog += f"- {dec(poi_dict[field])} -> {value}\n"
+
+            setattr(poi, field, enc(value))
+
+    # Create file for pfp
+    if data.pfp:
+        # Decode string
+        try:
+            img_data = base64.b64decode(data.pfp)
+        except binascii.Error:
+            raise BadRequest("Invalid pfp url bytes", loc=["body", "pfp"])
+
+        # Save data to file
+        loc = f"{settings.UPLOAD_DIR}/poi/{poi.id}/pfp/pfp.jpeg"
+        os.makedirs(os.path.dirname(loc), exist_ok=True)
+
+        async with aiofiles.open(loc, "wb") as file:
+            await file.write(img_data)
+
+        # Set url
+        poi.pfp_url = encryption_manager.encrypt_str(file.name)  # type: ignore
+
+    # Save changes
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="poi",
+        action=f"create:{poi.id}",
+        notes=await dict_to_string(data.model_dump()),
+        db=db,
+    )
+
+    return poi
+
+
 async def create_poi_application_process(poi: models.POI, db: Session):
     """
     Create poi application process
