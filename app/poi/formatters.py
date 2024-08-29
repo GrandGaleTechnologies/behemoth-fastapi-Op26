@@ -53,8 +53,21 @@ async def format_poi_base(poi: models.POI):
         "religion": encrypt_man.decrypt_str(poi.religion)
         if bool(poi.religion)
         else None,
+        "political_affiliation": encrypt_man.decrypt_str(poi.political_affiliation)
+        if bool(poi.political_affiliation)
+        else None,
+        "tribal_union": encrypt_man.decrypt_str(poi.tribal_union)
+        if bool(poi.tribal_union)
+        else None,
+        "last_seen_date": encrypt_man.decrypt_date(poi.last_seen_date)
+        if bool(poi.last_seen_date)
+        else None,
+        "last_seen_time": encrypt_man.decrypt_time(poi.last_seen_time)
+        if bool(poi.last_seen_time)
+        else None,
         "is_completed": encrypt_man.decrypt_boolean(poi.is_completed),
         "is_pinned": encrypt_man.decrypt_boolean(poi.is_pinned),
+        "notes": encrypt_man.decrypt_str(poi.notes) if bool(poi.notes) else None,
         "id_documents": [
             await format_id_document(doc=doc)
             for doc in poi.id_documents

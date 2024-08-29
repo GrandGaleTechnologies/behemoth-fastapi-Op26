@@ -93,15 +93,21 @@ class POIBaseInformation(BaseModel):
     """
 
     id: int = Field(description="The ID of the poi")
-    pfp: str | None = Field(default=None, description="Profile picture URL")
+    # Basic Information
+    pfp: str | None = Field(description="Profile picture URL")
     full_name: str = Field(description="Full name of the POI")
     alias: str = Field(description="Alias of the POI")
-    dob: date | None = Field(default=None, description="Date of birth")
-    pob: str | None = Field(default=None, description="Place of birth")
-    nationality: str | None = Field(default=None, description="Nationality")
-    religion: str | None = Field(default=None, description="Religion")
+    dob: date | None = Field(description="Date of birth")
+    pob: str | None = Field(description="Place of birth")
+    nationality: str | None = Field(description="Nationality")
+    religion: str | None = Field(description="Religion")
+    political_affiliation: str | None = Field(description="Political affiliation")
+    tribal_union: str | None = Field(description="Tribal union")
+    last_seen_date: date | None = Field(description="Last seen date")
+    last_seen_time: time | None = Field(description="Last seen time")
+    notes: str | None = Field(default=None, description="additional notes on the poi")
     id_documents: list["IDDocument"] | None = Field(
-        default=None, description="The list of ID Documents"
+        description="The list of iD Documents"
     )
     created_at: datetime = Field(description="The time the poi was created")
 

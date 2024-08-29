@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 
 from pydantic import BaseModel, Field
 
@@ -25,6 +25,30 @@ class POIBaseInformationEdit(BaseModel):
     pob: str | None = Field(default=None, description="Place of birth")
     nationality: str | None = Field(default=None, description="Nationality")
     religion: str | None = Field(default=None, description="Religion")
+    political_affiliation: str | None = Field(
+        default=None, description="Political affiliation"
+    )
+    tribal_union: str | None = Field(default=None, description="Tribal union")
+    last_seen_date: date | None = Field(default=None, description="Last seen date")
+    last_seen_time: time | None = Field(default=None, description="Last seen time")
+    notes: str | None = Field(default=None, description="additional notes on the poi")
+
+
+class POIOtherProfileEdit(BaseModel):
+    """
+    Edit schema for other profile poi information
+    """
+
+    # Other Profiles
+    email_addresses: str | None = Field(
+        default=None, description="The list of the known poi email addresses"
+    )
+    political_affiliation: str | None = Field(
+        default=None, description="Political affiliation"
+    )
+    tribal_union: str | None = Field(default=None, description="Tribal union")
+    last_seen_date: date | None = Field(default=None, description="Last seen date")
+    last_seen_time: time | None = Field(default=None, description="Last seen time")
 
 
 class IDDocumentEdit(BaseModel):

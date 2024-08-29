@@ -25,6 +25,13 @@ class POIBaseInformationCreate(BaseModel):
     pob: str | None = Field(default=None, description="Place of birth")
     nationality: str | None = Field(default=None, description="Nationality")
     religion: str | None = Field(default=None, description="Religion")
+    political_affiliation: str | None = Field(
+        default=None, description="Political affiliation"
+    )
+    tribal_union: str | None = Field(default=None, description="Tribal union")
+    last_seen_date: date | None = Field(default=None, description="Last seen date")
+    last_seen_time: time | None = Field(default=None, description="Last seen time")
+    notes: str | None = Field(default=None, description="additional notes on the poi")
     id_documents: list["CreateIDDocument"] | None = Field(
         default=None, description="The list of ID Documents"
     )
@@ -36,15 +43,7 @@ class POIOtherProfileCreate(BaseModel):
     """
 
     # Other Profiles
-    email_addresses: str | None = Field(
-        default=None, description="The list of the known poi email addresses"
-    )
-    political_affiliation: str | None = Field(
-        default=None, description="Political affiliation"
-    )
-    tribal_union: str | None = Field(default=None, description="Tribal union")
-    last_seen_date: date | None = Field(default=None, description="Last seen date")
-    last_seen_time: time | None = Field(default=None, description="Last seen time")
+
     gsm_numbers: list["CreateGSMNumber"] | None = Field(
         default=None, description="The list of the poi's gsm numbers"
     )
@@ -101,15 +100,6 @@ class POICaseReportCreate(BaseModel):
     frequented_spots: list["CreateFrequentedSpot"] | None = Field(
         default=None, description="The poi's frequented spots"
     )
-
-
-class POINotesCreate(BaseModel):
-    """
-    Create schema for poi notes
-    """
-
-    # Notes
-    notes: str | None = Field(default=None, description="additional notes on the poi")
 
 
 class POIFingerprintCreate(BaseModel):

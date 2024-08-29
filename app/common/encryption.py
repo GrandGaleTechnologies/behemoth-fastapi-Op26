@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 import cryptography
 from cryptography.fernet import Fernet
@@ -84,3 +84,21 @@ class EncryptionManager:
             raise Forbidden()
 
         return date.fromisoformat(dt_str)  # Convert string back to date
+
+    def encrypt_time(self, tm: time):
+        """
+        Encrypt time
+        """
+        tm_str = tm.isoformat()  # Convert time to ISO 8601 string format
+        return self.encrypt_str(tm_str)
+
+    def decrypt_time(self, data: str | Column[str]):
+        """
+        Decrypt time
+        """
+        try:
+            tm_str = self.decrypt_str(data)  # Decrypt to ISO 8601 string
+        except cryptography.fernet.InvalidToken:
+            raise Forbidden()
+
+        return time.fromisoformat(tm_str)  # Convert string back to time

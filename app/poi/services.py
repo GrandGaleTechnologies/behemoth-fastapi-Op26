@@ -1,6 +1,7 @@
 import base64
 import binascii
 import os
+import random
 from datetime import datetime
 
 import aiofiles
@@ -28,6 +29,10 @@ encrypt_man_dict = {
     "date": {
         "enc": encryption_manager.encrypt_date,
         "dec": encryption_manager.decrypt_date,
+    },
+    "time": {
+        "enc": encryption_manager.encrypt_time,
+        "dec": encryption_manager.decrypt_time,
     },
 }
 
@@ -167,7 +172,22 @@ async def create_poi(
         "religion": encryption_manager.encrypt_str(data.religion)
         if data.religion
         else None,
+        "political_affiliation": encryption_manager.encrypt_str(
+            data.political_affiliation
+        )
+        if data.political_affiliation
+        else None,
+        "tribal_union": encryption_manager.encrypt_str(data.tribal_union)
+        if data.tribal_union
+        else None,
+        "last_seen_date": encryption_manager.encrypt_date(data.last_seen_date)
+        if data.last_seen_date
+        else None,
+        "last_seen_time": encryption_manager.encrypt_time(data.last_seen_time)
+        if data.last_seen_time
+        else None,
         "is_completed": encryption_manager.encrypt_boolean(data=False),
+        "notes": encryption_manager.encrypt_str(data.notes) if data.notes else None,
     }
 
     # Create poi
@@ -195,7 +215,7 @@ async def create_poi(
             raise BadRequest("Invalid pfp url bytes", loc=["body", "pfp"])
 
         # Save data to file
-        loc = f"{settings.UPLOAD_DIR}/poi/{poi.id}/pfp/pfp.jpeg"
+        loc = f"{settings.UPLOAD_DIR}/poi/{poi.id}/pfp/pfp_{random.randint(1, 50)}.jpeg"
         os.makedirs(os.path.dirname(loc), exist_ok=True)
 
         async with aiofiles.open(loc, "wb") as file:
@@ -241,12 +261,16 @@ async def edit_poi(
 
     # edit info
     poi_dict = poi.__dict__
-    for field, value in data.model_dump(exclude=["pfp"]).items():  # type: ignore
+    for field, value in data.model_dump(exclude=["pfp"], exclude_none=True).items():  # type: ignore
         enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
         dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
 
-        if dec(poi_dict[field]) != value:
+        if poi_dict[field] and dec(poi_dict[field]) != value:
             changelog += f"- {dec(poi_dict[field])} -> {value}\n"
+
+            setattr(poi, field, enc(value))
+        elif not poi_dict[field] and value:
+            changelog += f"- {poi_dict[field]} -> {value}\n"
 
             setattr(poi, field, enc(value))
 
