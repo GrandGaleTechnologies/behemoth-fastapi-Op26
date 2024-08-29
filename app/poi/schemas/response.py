@@ -1,7 +1,12 @@
 from pydantic import Field
 
 from app.common.schemas import PaginatedResponseSchema, ResponseSchema
-from app.poi.schemas.base import Offense, POIApplicationProcess, POIBaseInformation
+from app.poi.schemas.base import (
+    IDDocument,
+    Offense,
+    POIApplicationProcess,
+    POIBaseInformation,
+)
 
 
 class OffenseResponse(ResponseSchema):
@@ -49,3 +54,21 @@ class POIBaseInformationResponse(ResponseSchema):
 
     msg: str = Field(default="POI successfully retreieved")
     data: POIBaseInformation = Field(description="The details of the poi")
+
+
+class IDDocumentResponse(ResponseSchema):
+    """
+    Response schema for id documents
+    """
+
+    msg: str = Field(default="ID Document retrieved successfully")
+    data: IDDocument = Field(description="The details of the ID Document")
+
+
+class IDDocumentDeleteResponse(ResponseSchema):
+    """
+    Response schema for id document delete request
+    """
+
+    msg: str = Field(default="ID Document deleted successfully")
+    data: None = None

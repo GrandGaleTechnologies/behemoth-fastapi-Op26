@@ -32,6 +32,5 @@ class IDDocumentEdit(BaseModel):
     Create schema for ID Documents
     """
 
-    id: int | None = Field(description="The document's ID")
     type: str = Field(description="Type of ID document")
     id_number: str = Field(description="ID number")

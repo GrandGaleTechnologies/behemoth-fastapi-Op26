@@ -10,8 +10,8 @@ from app.common.types import PaginationParamsType
 from app.common.utils import find_all_matches, get_last_day_of_month, paginate_list
 from app.core.settings import get_settings
 from app.poi import models, utils
-from app.poi.crud import POICRUD, OffenseCRUD
-from app.poi.exceptions import OffeseNotFound, POINotFound
+from app.poi.crud import POICRUD, IDDocumentCRUD, OffenseCRUD
+from app.poi.exceptions import IDDocumentNotFound, OffeseNotFound, POINotFound
 
 # Globals
 settings = get_settings()
@@ -224,5 +224,32 @@ async def get_poi_by_id(id: int, db: Session, raise_exc: bool = True):
     obj = await poi_crud.get(id=id)
     if not obj and raise_exc:
         raise POINotFound()
+
+    return obj
+
+
+async def get_id_doc_by_id(id: int, db: Session, raise_exc: bool = True):
+    """
+    Get ID Document using its iD
+
+    Args:
+        id (int): The id of the document
+        db (Session): The database session
+        raise_exc (bool = True): raise a 404 if not found
+
+    Returns:
+        models.IDDocument | None
+    """
+    # Init crud
+    doc_crud = IDDocumentCRUD(db=db)
+
+    # Get id doc
+    obj = await doc_crud.get(id=id)
+    if not obj and raise_exc:
+        raise IDDocumentNotFound()
+
+    # Check if delete
+    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+        raise IDDocumentNotFound()
 
     return obj

@@ -103,6 +103,7 @@ class IDDocument(DBBase):
     poi_id = Column(Integer, ForeignKey("pois.id", ondelete="CASCADE"), nullable=False)
     type = Column(String, nullable=False)
     id_number = Column(String, nullable=False)
+
     is_deleted = Column(
         String, nullable=False, default=encryption_manager.encrypt_boolean(False)
     )

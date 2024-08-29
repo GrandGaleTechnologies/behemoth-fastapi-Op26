@@ -55,7 +55,11 @@ async def format_poi_base(poi: models.POI):
         else None,
         "is_completed": encrypt_man.decrypt_boolean(poi.is_completed),
         "is_pinned": encrypt_man.decrypt_boolean(poi.is_pinned),
-        "id_documents": [await format_id_document(doc=doc) for doc in poi.id_documents]
+        "id_documents": [
+            await format_id_document(doc=doc)
+            for doc in poi.id_documents
+            if not encrypt_man.decrypt_boolean(doc.is_deleted)
+        ]
         if poi.id_documents
         else None,
         "created_at": encrypt_man.decrypt_datetime(poi.created_at),

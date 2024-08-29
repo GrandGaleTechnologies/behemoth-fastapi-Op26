@@ -17,3 +17,12 @@ class POINotFound(NotFound):
 
     def __init__(self, *, loc: list | None = None):
         super().__init__("POI Not Found", loc=loc)
+
+
+class IDDocumentNotFound(NotFound):
+    """
+    Exception for 404 ID Document Not Found
+    """
+
+    def __init__(self, *, loc: list | None = None):
+        super().__init__("ID Document Not Found", loc=loc)

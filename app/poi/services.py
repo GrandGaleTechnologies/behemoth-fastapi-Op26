@@ -20,6 +20,16 @@ from app.user.services import create_log
 # Global
 settings = get_settings()
 encryption_manager = EncryptionManager(key=settings.ENCRYPTION_KEY)
+encrypt_man_dict = {
+    "str": {
+        "enc": encryption_manager.encrypt_str,
+        "dec": encryption_manager.decrypt_str,
+    },
+    "date": {
+        "enc": encryption_manager.encrypt_date,
+        "dec": encryption_manager.decrypt_date,
+    },
+}
 
 
 async def create_offense(
@@ -127,6 +137,20 @@ async def edit_offense(
 async def create_poi(
     user: user_models.User, data: create.POIBaseInformationCreate, db: Session
 ):
+    """
+    Create poi
+
+    Args:
+        user (user_models.User): The user obj
+        data (create.POIBaseInformationCreate): The poi data
+        db (Session): The database session
+
+    Raises:
+        BadRequest: Invalid pfp bytes string
+
+    Returns:
+        models.POI
+    """
     # Init crud
     poi_crud = POICRUD(db=db)
     id_crud = IDDocumentCRUD(db=db)
@@ -211,17 +235,6 @@ async def edit_poi(
     Returns:
         models.POI
     """
-    # type mang:
-    encrypt_man_dict = {
-        "str": {
-            "enc": encryption_manager.encrypt_str,
-            "dec": encryption_manager.decrypt_str,
-        },
-        "date": {
-            "enc": encryption_manager.encrypt_date,
-            "dec": encryption_manager.decrypt_date,
-        },
-    }
 
     # init changelog
     changelog = ""
@@ -288,3 +301,92 @@ async def create_poi_application_process(poi: models.POI, db: Session):
     application_process = await application_crud.create(data={"poi_id": poi.id})
 
     return application_process
+
+
+########################################################################
+# ID Document
+########################################################################
+async def create_id_doc(
+    user: user_models.User, poi: models.POI, data: create.CreateIDDocument, db: Session
+):
+    """
+    Create ID Doc
+
+    Args:
+        user (user_models.User): The user obj
+        poi (models.POI): The poi obj
+        data (create.CreateIDDocument): The doc's data
+        db (Session): The database session
+
+    Returns:
+        models.IDDocument
+    """
+    # Init crud
+    doc_crud = IDDocumentCRUD(db=db)
+
+    # Create ID Doc
+    enc = encrypt_man_dict["str"]["enc"]
+
+    doc = await doc_crud.create(
+        data={
+            "poi_id": poi.id,
+            "type": enc(data.type),
+            "id_number": enc(data.id_number),
+        }
+    )
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="id-doc",
+        action=f"create:{doc.id}",
+        notes=await dict_to_string(data.model_dump()),
+        db=db,
+    )
+
+    return doc
+
+
+async def edit_id_doc(
+    user: user_models.User,
+    doc: models.IDDocument,
+    data: edit.IDDocumentEdit,
+    db: Session,
+):
+    """
+    Edit ID Document
+
+    Args:
+        user (user_models.User): The user obj
+        doc (models.IDDocument): The id doc obj
+        data (edit.IDDocumentEdit): The doc edit data
+        db (Session): The database session
+
+    Returns:
+        models.IDDocument
+    """
+    changelog = ""
+
+    doc_dict = doc.__dict__
+    for field, value in data.model_dump().items():
+        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
+        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+
+        if dec(doc_dict[field]) != value:
+            changelog += f"- {dec(doc_dict[field])} -> {value}\n"
+
+            setattr(doc, field, enc(value))
+
+    # Save changes
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="iddoc",
+        action=f"edit:{doc.id}",
+        notes=changelog,
+        db=db,
+    )
+
+    return doc
