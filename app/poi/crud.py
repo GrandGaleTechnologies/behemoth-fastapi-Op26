@@ -49,7 +49,7 @@ class POIOffenseCRUD(CRUDBase[models.POIOffense]):
         super().__init__(models.POIOffense, db)
 
 
-class GSMNumber(CRUDBase[models.GSMNumber]):
+class GSMNumberCRUD(CRUDBase[models.GSMNumber]):
     """
     CRUD Class for gsm numbers
     """

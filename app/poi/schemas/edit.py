@@ -58,3 +58,14 @@ class IDDocumentEdit(BaseModel):
 
     type: str = Field(description="Type of ID document")
     id_number: str = Field(description="ID number")
+
+
+class GSMNumberEdit(BaseModel):
+    """
+    Edit schema for GSM Numbers
+    """
+
+    service_provider: str = Field(description="Service provider name")
+    number: str = Field(description="GSM number")
+    last_call_date: date | None = Field(default=None, description="Last call date")
+    last_call_time: time | None = Field(default=None, description="Last call time")

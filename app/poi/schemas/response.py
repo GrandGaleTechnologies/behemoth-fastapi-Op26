@@ -2,6 +2,7 @@ from pydantic import Field
 
 from app.common.schemas import PaginatedResponseSchema, ResponseSchema
 from app.poi.schemas.base import (
+    GSMNumber,
     IDDocument,
     Offense,
     POIApplicationProcess,
@@ -82,3 +83,12 @@ class IDDocumentDeleteResponse(ResponseSchema):
 
     msg: str = Field(default="ID Document deleted successfully")
     data: None = None
+
+
+class GSMNumberResponse(ResponseSchema):
+    """
+    Response schema for poi gsm number
+    """
+
+    msg: str = Field(default="GSM retrieved successfully")
+    data: GSMNumber = Field(description="The details of the gsm number")

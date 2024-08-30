@@ -10,8 +10,13 @@ from app.common.types import PaginationParamsType
 from app.common.utils import find_all_matches, get_last_day_of_month, paginate_list
 from app.core.settings import get_settings
 from app.poi import models, utils
-from app.poi.crud import POICRUD, IDDocumentCRUD, OffenseCRUD
-from app.poi.exceptions import IDDocumentNotFound, OffeseNotFound, POINotFound
+from app.poi.crud import POICRUD, GSMNumberCRUD, IDDocumentCRUD, OffenseCRUD
+from app.poi.exceptions import (
+    GSMNumberNotFound,
+    IDDocumentNotFound,
+    OffeseNotFound,
+    POINotFound,
+)
 
 # Globals
 settings = get_settings()
@@ -251,5 +256,31 @@ async def get_id_doc_by_id(id: int, db: Session, raise_exc: bool = True):
     # Check if delete
     if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
         raise IDDocumentNotFound()
+
+    return obj
+
+
+async def get_gsm_by_id(id: int, db: Session, raise_exc: bool = True):
+    """
+    Get GSM Number using ID
+
+    Args:
+        id (int): The ID of the gsm number
+        db (Session): The database session
+        raise_exc (bool = True): raise a 404 if not found
+
+    Raises:
+        GSMNumberNotFound
+
+    Returns:
+        models.GSMNumber | None
+    """
+    # Init crud
+    gsm_crud = GSMNumberCRUD(db=db)
+
+    # Get gsm
+    obj = await gsm_crud.get(id=id)
+    if not obj and raise_exc:
+        raise GSMNumberNotFound()
 
     return obj

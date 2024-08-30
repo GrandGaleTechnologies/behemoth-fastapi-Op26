@@ -10,6 +10,7 @@ from app.core.settings import get_settings
 from app.core.tags import get_tags
 from app.poi import models, selectors, services
 from app.poi.formatters import (
+    format_gsm,
     format_id_document,
     format_poi_application,
     format_poi_base,
@@ -140,6 +141,55 @@ async def route_poi_base_info(poi_id: int, curr_user: CurrentUser, db: DatabaseS
     return {"data": await format_poi_base(poi=poi)}
 
 
+#################################################################
+# Other profile
+#################################################################
+@router.post(
+    "/{poi_id}/other",
+    summary="Get POI other profile",
+    response_description="The POIs other profile",
+    status_code=status.HTTP_200_OK,
+    response_model=response.POIOtherInformationResponse,
+    tags=[tags.POI_OTHER_PROFILE],
+)
+async def route_poi_other_create(
+    poi_id: int,
+    data_in: create.POIOtherProfileCreate,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint adds the poi's other profile information
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create gsm numbers
+    if data_in.gsm_numbers:
+        for gsm in data_in.gsm_numbers:
+            await services.create_gsm_number(user=curr_user, poi=poi, data=gsm, db=db)
+
+    # Create residential addresses
+    if data_in.residential_addresses:
+        for address in data_in.residential_addresses:
+            await services.create_residential_address(
+                user=curr_user, poi=poi, data=address, db=db
+            )
+
+    # Create known associates
+    if data_in.known_associates:
+        for associate in data_in.known_associates:
+            await services.create_known_associates(
+                user=curr_user, poi=poi, data=associate, db=db
+            )
+
+    # Refresh poi
+    db.refresh(poi)
+
+    return {"data": await format_poi_other_profile(poi=poi)}
+
+
 ######################################################################
 # ID Document
 ######################################################################
@@ -230,50 +280,31 @@ async def route_poi_id_doc_delete(
     return {}
 
 
-#################################################################
-# Other profile
-#################################################################
-@router.post(
-    "/{poi_id}/other",
-    summary="Get POI other profile",
-    response_description="The POIs other profile",
+###################################################################
+# GSM NUMBERS
+###################################################################
+@router.put(
+    "/gsm/{gsm_id}",
+    summary="Edit GSM Number",
+    response_description="The edited gsm number",
     status_code=status.HTTP_200_OK,
-    response_model=response.POIOtherInformationResponse,
-    tags=[tags.POI_OTHER_PROFILE],
+    response_model=response.GSMNumberResponse,
+    tags=[tags.POI_GSM_NUMBER],
 )
-async def route_poi_other_create(
-    poi_id: int,
-    data_in: create.POIOtherProfileCreate,
+async def route_poi_gsm_edit(
+    gsm_id: int,
+    data_in: edit.GSMNumberEdit,
     curr_user: CurrentUser,
     db: DatabaseSession,
 ):
     """
-    This endpoint adds the poi's other profile information
+    This endpoint edits a poi's gsm number
     """
 
-    # Get poi
-    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+    # Get gsm
+    gsm = await selectors.get_gsm_by_id(id=gsm_id, db=db)
 
-    # Create gsm numbers
-    if data_in.gsm_numbers:
-        for gsm in data_in.gsm_numbers:
-            await services.create_gsm_number(user=curr_user, poi=poi, data=gsm, db=db)
+    # Edit gsm
+    edited_gsm = await services.edit_gsm(user=curr_user, gsm=gsm, data=data_in, db=db)
 
-    # Create residential addresses
-    if data_in.residential_addresses:
-        for address in data_in.residential_addresses:
-            await services.create_residential_address(
-                user=curr_user, poi=poi, data=address, db=db
-            )
-
-    # Create known associates
-    if data_in.known_associates:
-        for associate in data_in.known_associates:
-            await services.create_known_associates(
-                user=curr_user, poi=poi, data=associate, db=db
-            )
-
-    # Refresh poi
-    db.refresh(poi)
-
-    return {"data": await format_poi_other_profile(poi=poi)}
+    return {"data": await format_gsm(gsm=edited_gsm)}

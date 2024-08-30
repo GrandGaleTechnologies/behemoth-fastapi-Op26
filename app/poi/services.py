@@ -14,7 +14,7 @@ from app.core.settings import get_settings
 from app.poi import models
 from app.poi.crud import (
     POICRUD,
-    GSMNumber,
+    GSMNumberCRUD,
     IDDocumentCRUD,
     KnownAssociateCRUD,
     OffenseCRUD,
@@ -443,7 +443,7 @@ async def create_gsm_number(
         models.GSMNumber
     """
     # Init crud
-    gsm_crud = GSMNumber(db=db)
+    gsm_crud = GSMNumberCRUD(db=db)
 
     # Create gsm number
     enc = encrypt_man_dict["str"]["enc"]
@@ -471,6 +471,52 @@ async def create_gsm_number(
     )
 
     return obj
+
+
+async def edit_gsm(
+    user: user_models.User, gsm: models.GSMNumber, data: edit.GSMNumberEdit, db: Session
+):
+    """
+    Edit gsm number
+
+    Args:
+        user (user_models.User): The user obj
+        gsm (models.GSMNumber): The gsm number obj
+        data (edit.GSMNumberEdit): The details of the gsm number
+        db (Session): The database session
+
+    Returns:
+        models.GSMNumber
+    """
+    changelog = ""
+
+    gsm_dict = gsm.__dict__
+    for field, value in data.model_dump(exclude=["pfp"], exclude_none=True).items():  # type: ignore
+        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
+        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+
+        if gsm_dict[field] and dec(gsm_dict[field]) != value:
+            changelog += f"- {dec(gsm_dict[field])} -> {value}\n"
+
+            setattr(gsm, field, enc(value))
+        elif not gsm_dict[field] and value:
+            changelog += f"- {gsm_dict[field]} -> {value}\n"
+
+            setattr(gsm, field, enc(value))
+
+    # Save changes
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="gsm-number",
+        action=f"edit:{gsm.id}",
+        notes=changelog,
+        db=db,
+    )
+
+    return gsm
 
 
 ##############################################################

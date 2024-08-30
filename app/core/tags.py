@@ -13,6 +13,7 @@ class RouteTags(BaseModel):
     POI_BASE_INFORMATION: str = "POI Base Information Endpoints"
     POI_OTHER_PROFILE: str = "POI Other Profile Endpoints"
     POI_ID_DOCUMENT: str = "POI ID Document Endpoints"
+    POI_GSM_NUMBER: str = "POI GSM Number Endpoints"
 
 
 @lru_cache

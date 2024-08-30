@@ -26,3 +26,12 @@ class IDDocumentNotFound(NotFound):
 
     def __init__(self, *, loc: list | None = None):
         super().__init__("ID Document Not Found", loc=loc)
+
+
+class GSMNumberNotFound(NotFound):
+    """
+    Exception for 404 GSM Number Not Found
+    """
+
+    def __init__(self, *, loc: list | None = None):
+        super().__init__("GSM Number Not Found", loc=loc)
