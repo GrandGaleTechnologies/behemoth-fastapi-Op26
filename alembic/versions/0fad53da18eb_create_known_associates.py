@@ -34,6 +34,7 @@ def upgrade() -> None:
         sa.Column("known_gsm_numbers", sa.String, nullable=True),
         sa.Column("relationship", sa.String, nullable=False),
         sa.Column("occupation", sa.String, nullable=True),
+        sa.Column("residential_address", sa.String, nullable=True),
         sa.Column("last_seen_date", sa.String, nullable=True),
         sa.Column("last_seen_time", sa.String, nullable=True),
         sa.Column("is_deleted", sa.String, nullable=False),

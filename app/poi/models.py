@@ -129,9 +129,15 @@ class GSMNumber(DBBase):
     number = Column(String, nullable=False)
     last_call_date = Column(String, nullable=True)
     last_call_time = Column(String, nullable=True)
-    is_deleted = Column(String, nullable=False)
+    is_deleted = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
     edited_at = Column(String, nullable=True)
-    created_at = Column(String, nullable=False)
+    created_at = Column(
+        String,
+        nullable=False,
+        default=encryption_manager.encrypt_datetime(datetime.now()),
+    )
     deleted_at = Column(String, nullable=True)
 
 
@@ -148,9 +154,15 @@ class ResidentialAddress(DBBase):
     state = Column(String, nullable=False)
     city = Column(String, nullable=False)
     address = Column(String, nullable=True)
-    is_deleted = Column(String, nullable=False)
+    is_deleted = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
     edited_at = Column(String, nullable=True)
-    created_at = Column(String, nullable=False)
+    created_at = Column(
+        String,
+        nullable=False,
+        default=encryption_manager.encrypt_datetime(datetime.now()),
+    )
     deleted_at = Column(String, nullable=True)
 
 
@@ -171,9 +183,15 @@ class KnownAssociate(DBBase):
     last_seen_date = Column(String, nullable=True)
     last_seen_time = Column(String, nullable=True)
 
-    is_deleted = Column(String, nullable=False)
+    is_deleted = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
     edited_at = Column(String, nullable=True)
-    created_at = Column(String, nullable=False)
+    created_at = Column(
+        String,
+        nullable=False,
+        default=encryption_manager.encrypt_datetime(datetime.now()),
+    )
     deleted_at = Column(String, nullable=True)
 
 
@@ -193,9 +211,15 @@ class EmploymentHistory(DBBase):
     current_job = Column(String, nullable=False)
     description = Column(String, nullable=True)
 
-    is_deleted = Column(String, nullable=False)
+    is_deleted = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
     edited_at = Column(String, nullable=True)
-    created_at = Column(String, nullable=False)
+    created_at = Column(
+        String,
+        nullable=False,
+        default=encryption_manager.encrypt_datetime(datetime.now()),
+    )
     deleted_at = Column(String, nullable=True)
 
 
@@ -219,9 +243,15 @@ class VeteranStatus(DBBase):
     to_date = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
 
-    is_deleted = Column(String, nullable=False)
+    is_deleted = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
     edited_at = Column(String, nullable=True)
-    created_at = Column(String, nullable=False)
+    created_at = Column(
+        String,
+        nullable=False,
+        default=encryption_manager.encrypt_datetime(datetime.now()),
+    )
     deleted_at = Column(String, nullable=True)
 
 
@@ -242,9 +272,15 @@ class EducationalBackground(DBBase):
     to_date = Column(String, nullable=True)
     current_institute = Column(String, nullable=False)
 
-    is_deleted = Column(String, nullable=False)
+    is_deleted = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
     edited_at = Column(String, nullable=True)
-    created_at = Column(String, nullable=False)
+    created_at = Column(
+        String,
+        nullable=False,
+        default=encryption_manager.encrypt_datetime(datetime.now()),
+    )
     deleted_at = Column(String, nullable=True)
 
 
@@ -264,9 +300,15 @@ class POIOffense(DBBase):
     date_convicted = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
 
-    is_deleted = Column(String, nullable=False)
+    is_deleted = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
     edited_at = Column(String, nullable=True)
-    created_at = Column(String, nullable=False)
+    created_at = Column(
+        String,
+        nullable=False,
+        default=encryption_manager.encrypt_datetime(datetime.now()),
+    )
     deleted_at = Column(String, nullable=True)
 
 
@@ -287,9 +329,15 @@ class FrequentedSpot(DBBase):
     to_date = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
 
-    is_deleted = Column(String, nullable=False)
+    is_deleted = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
     edited_at = Column(String, nullable=True)
-    created_at = Column(String, nullable=False)
+    created_at = Column(
+        String,
+        nullable=False,
+        default=encryption_manager.encrypt_datetime(datetime.now()),
+    )
     deleted_at = Column(String, nullable=True)
 
 
@@ -307,7 +355,9 @@ class Fingerprint(DBBase):
     left_pointer = Column(String, nullable=False)
     right_pointer = Column(String, nullable=False)
 
-    is_deleted = Column(String, nullable=False)
+    is_deleted = Column(
+        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    )
     edited_at = Column(String, nullable=True)
     created_at = Column(String, nullable=False)
     deleted_at = Column(String, nullable=True)
