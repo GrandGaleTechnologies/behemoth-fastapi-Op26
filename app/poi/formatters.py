@@ -79,6 +79,23 @@ async def format_poi_base(poi: models.POI):
     }
 
 
+async def format_poi_other_profile(poi: models.POI):
+    """
+    Format poi to poi other profile obj
+    """
+    return {
+        "gsm_numbers": [await format_gsm(gsm=gsm) for gsm in poi.gsm_numbers],
+        "residential_addresses": [
+            await format_residential_address(address=address)
+            for address in poi.residential_addresses
+        ],
+        "known_associates": [
+            await format_known_associates(associate=associate)
+            for associate in poi.known_associates
+        ],
+    }
+
+
 async def format_id_document(doc: models.IDDocument):
     """
     Format ID Doc object to dict
@@ -88,4 +105,60 @@ async def format_id_document(doc: models.IDDocument):
         "id": doc.id,
         "type": encrypt_man.decrypt_str(doc.type),
         "id_number": encrypt_man.decrypt_str(doc.id_number),
+    }
+
+
+async def format_gsm(gsm: models.GSMNumber):
+    """
+    Format gsm obj to dict
+    """
+    return {
+        "id": gsm.id,
+        "service_provider": encrypt_man.decrypt_str(gsm.service_provider),
+        "number": encrypt_man.decrypt_str(gsm.number),
+        "last_call_date": encrypt_man.decrypt_date(gsm.last_call_date)
+        if bool(gsm.last_call_date)
+        else None,
+        "last_call_time": encrypt_man.decrypt_time(gsm.last_call_time)
+        if bool(gsm.last_call_time)
+        else None,
+    }
+
+
+async def format_residential_address(address: models.ResidentialAddress):
+    """
+    Format residential address obj to dict
+    """
+    dec = encrypt_man.decrypt_str
+    return {
+        "id": address.id,
+        "country": dec(address.country),
+        "state": dec(address.state),
+        "city": dec(address.city),
+        "address": dec(address.address) if bool(address.address) else None,
+    }
+
+
+async def format_known_associates(associate: models.KnownAssociate):
+    """
+    Format known associate obj to dict
+    """
+    dec = encrypt_man.decrypt_str
+    return {
+        "id": associate.id,
+        "full_name": dec(associate.full_name),
+        "known_gsm_numbers": dec(associate.known_gsm_numbers)
+        if bool(associate.known_gsm_numbers)
+        else None,
+        "relationship": dec(associate.relationship),
+        "occupation": dec(associate.occupation) if bool(associate.occupation) else None,
+        "residential_address": dec(associate.residential_address)
+        if bool(associate.residential_address)
+        else None,
+        "last_seen_date": encrypt_man.decrypt_date(associate.last_seen_date)
+        if bool(associate.last_seen_date)
+        else None,
+        "last_seen_time": encrypt_man.decrypt_time(associate.last_seen_time)
+        if bool(associate.last_seen_time)
+        else None,
     }

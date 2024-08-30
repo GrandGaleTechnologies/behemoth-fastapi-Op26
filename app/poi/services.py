@@ -12,7 +12,15 @@ from app.common.exceptions import BadRequest
 from app.common.utils import dict_to_string
 from app.core.settings import get_settings
 from app.poi import models
-from app.poi.crud import POICRUD, IDDocumentCRUD, OffenseCRUD, POIApplicationProcess
+from app.poi.crud import (
+    POICRUD,
+    GSMNumber,
+    IDDocumentCRUD,
+    KnownAssociateCRUD,
+    OffenseCRUD,
+    POIApplicationProcess,
+    ResidentialAddressCRUD,
+)
 from app.poi.schemas import create, edit
 from app.user import models as user_models
 from app.user.crud import AuditLogCRUD
@@ -414,3 +422,159 @@ async def edit_id_doc(
     )
 
     return doc
+
+
+#################################################
+# GSM NUMBERS
+#################################################
+async def create_gsm_number(
+    user: user_models.User, poi: models.POI, data: create.CreateGSMNumber, db: Session
+):
+    """
+    Create gsm number
+
+    Args:
+        user (user_models.User): The user obj
+        poi (models.POI): The poi obj
+        data (create.CreateGSMNumber): The details of the gsm number
+        db (Session): The database session
+
+    Returns:
+        models.GSMNumber
+    """
+    # Init crud
+    gsm_crud = GSMNumber(db=db)
+
+    # Create gsm number
+    enc = encrypt_man_dict["str"]["enc"]
+    obj = await gsm_crud.create(
+        data={
+            "poi_id": poi.id,
+            "service_provider": enc(data.service_provider),
+            "number": enc(data.number),
+            "last_call_date": encryption_manager.encrypt_date(data.last_call_date)
+            if data.last_call_date
+            else None,
+            "last_call_time": encryption_manager.encrypt_time(data.last_call_time)
+            if data.last_call_time
+            else None,
+        }
+    )
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="gsm-number",
+        action=f"create:{obj.id}",
+        notes=await dict_to_string(data.model_dump()),
+        db=db,
+    )
+
+    return obj
+
+
+##############################################################
+# RESIDENTIAL ADDRESSES
+##############################################################
+async def create_residential_address(
+    user: user_models.User,
+    poi: models.POI,
+    data: create.CreateResidentialAddress,
+    db: Session,
+):
+    """
+    Create residential address
+
+    Args:
+        user (user_models.User): The user obj
+        poi (models.POI): The poi obj
+        data (create.CreateResidentialAddress): The details of the address
+        db (Session): The database session
+
+    Returns:
+        models.ResidentialAddress
+    """
+    # Init crud
+    address_crud = ResidentialAddressCRUD(db=db)
+
+    # Create address
+    enc = encrypt_man_dict["str"]["enc"]
+    obj = await address_crud.create(
+        data={
+            "poi_id": poi.id,
+            "country": enc(data.country),
+            "state": enc(data.state),
+            "city": enc(data.city),
+            "address": enc(data.address) if data.address else None,
+        }
+    )
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="address",
+        action=f"create:{obj.id}",
+        notes=await dict_to_string(data.model_dump()),
+        db=db,
+    )
+
+    return obj
+
+
+############################################################
+# KNOWN ASSOCIATES
+############################################################
+async def create_known_associates(
+    user: user_models.User,
+    poi: models.POI,
+    data: create.CreateKnownAssociate,
+    db: Session,
+):
+    """
+    Create known associates
+
+    Args:
+        user (user_models.User): The user obj
+        poi (models.POI): The poi obj
+        data (create.CreateKnownAssociate): The associate's details
+        db (Session): The database session
+
+    Returns:
+        models.KnownAssociate
+    """
+    # Init crud
+    associate_crud = KnownAssociateCRUD(db=db)
+
+    # Create known associates
+    enc_str = encrypt_man_dict["str"]["enc"]
+    enc_date = encrypt_man_dict["date"]["enc"]
+    enc_time = encrypt_man_dict["time"]["enc"]
+    obj = await associate_crud.create(
+        data={
+            "poi_id": poi.id,
+            "full_name": enc_str(data.full_name),
+            "known_gsm_numbers": enc_str(data.known_gsm_numbers),
+            "relationship": enc_str(data.relationship),
+            "occupation": enc_str(data.occupation) if data.occupation else None,
+            "residential_address": enc_str(data.residential_address)
+            if data.residential_address
+            else None,
+            "last_seen_date": enc_date(data.last_seen_date)
+            if data.last_seen_date
+            else None,
+            "last_seen_time": enc_time(data.last_seen_time)
+            if data.last_seen_time
+            else None,
+        }
+    )
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="known-associates",
+        action=f"create:{obj.id}",
+        notes=await dict_to_string(data.model_dump()),
+        db=db,
+    )
+
+    return obj

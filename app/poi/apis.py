@@ -7,11 +7,13 @@ from app.common.annotations import DatabaseSession
 from app.common.encryption import EncryptionManager
 from app.common.exceptions import NotFound
 from app.core.settings import get_settings
+from app.core.tags import get_tags
 from app.poi import models, selectors, services
 from app.poi.formatters import (
     format_id_document,
     format_poi_application,
     format_poi_base,
+    format_poi_other_profile,
 )
 from app.poi.routes.offense import router as poi_offense_router
 from app.poi.schemas import create, edit, response
@@ -20,6 +22,7 @@ from app.user.services import create_log
 
 # Globals
 router = APIRouter()
+tags = get_tags()
 settings = get_settings()
 encrypt_man = EncryptionManager(key=settings.ENCRYPTION_KEY)
 
@@ -81,6 +84,7 @@ async def route_poi_create(
     response_description="The poi's edited base information",
     status_code=status.HTTP_200_OK,
     response_model=response.POIBaseInformationResponse,
+    tags=[tags.POI_BASE_INFORMATION],
 )
 async def route_poi_base_info_edit(
     poi_id: int,
@@ -115,6 +119,7 @@ async def route_poi_base_info_edit(
     response_description="The poi's base information",
     status_code=status.HTTP_200_OK,
     response_model=response.POIBaseInformationResponse,
+    tags=[tags.POI_BASE_INFORMATION],
 )
 async def route_poi_base_info(poi_id: int, curr_user: CurrentUser, db: DatabaseSession):
     """
@@ -136,11 +141,6 @@ async def route_poi_base_info(poi_id: int, curr_user: CurrentUser, db: DatabaseS
 
 
 ######################################################################
-# POI Other profile
-######################################################################
-
-
-######################################################################
 # ID Document
 ######################################################################
 @router.post(
@@ -149,6 +149,7 @@ async def route_poi_base_info(poi_id: int, curr_user: CurrentUser, db: DatabaseS
     response_description="The created Id doc obj",
     status_code=status.HTTP_201_CREATED,
     response_model=response.IDDocumentResponse,
+    tags=[tags.POI_ID_DOCUMENT],
 )
 async def route_poi_id_doc_create(
     poi_id: int,
@@ -175,6 +176,7 @@ async def route_poi_id_doc_create(
     response_description="The edited ID Doc",
     status_code=status.HTTP_200_OK,
     response_model=response.IDDocumentResponse,
+    tags=[tags.POI_ID_DOCUMENT],
 )
 async def route_poi_id_doc_edit(
     doc_id: int,
@@ -200,6 +202,7 @@ async def route_poi_id_doc_edit(
     response_description="ID Document Deleted Successfully",
     status_code=status.HTTP_200_OK,
     response_model=response.IDDocumentDeleteResponse,
+    tags=[tags.POI_ID_DOCUMENT],
 )
 async def route_poi_id_doc_delete(
     doc_id: int, curr_user: CurrentUser, db: DatabaseSession
@@ -225,3 +228,52 @@ async def route_poi_id_doc_delete(
     )
 
     return {}
+
+
+#################################################################
+# Other profile
+#################################################################
+@router.post(
+    "/{poi_id}/other",
+    summary="Get POI other profile",
+    response_description="The POIs other profile",
+    status_code=status.HTTP_200_OK,
+    response_model=response.POIOtherInformationResponse,
+    tags=[tags.POI_OTHER_PROFILE],
+)
+async def route_poi_other_create(
+    poi_id: int,
+    data_in: create.POIOtherProfileCreate,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint adds the poi's other profile information
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create gsm numbers
+    if data_in.gsm_numbers:
+        for gsm in data_in.gsm_numbers:
+            await services.create_gsm_number(user=curr_user, poi=poi, data=gsm, db=db)
+
+    # Create residential addresses
+    if data_in.residential_addresses:
+        for address in data_in.residential_addresses:
+            await services.create_residential_address(
+                user=curr_user, poi=poi, data=address, db=db
+            )
+
+    # Create known associates
+    if data_in.known_associates:
+        for associate in data_in.known_associates:
+            await services.create_known_associates(
+                user=curr_user, poi=poi, data=associate, db=db
+            )
+
+    # Refresh poi
+    db.refresh(poi)
+
+    return {"data": await format_poi_other_profile(poi=poi)}

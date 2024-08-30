@@ -47,3 +47,30 @@ class POIOffenseCRUD(CRUDBase[models.POIOffense]):
 
     def __init__(self, db: Session):
         super().__init__(models.POIOffense, db)
+
+
+class GSMNumber(CRUDBase[models.GSMNumber]):
+    """
+    CRUD Class for gsm numbers
+    """
+
+    def __init__(self, db: Session):
+        super().__init__(models.GSMNumber, db)
+
+
+class ResidentialAddressCRUD(CRUDBase[models.ResidentialAddress]):
+    """
+    CRUD Class for residential addresses
+    """
+
+    def __init__(self, db: Session):
+        super().__init__(models.ResidentialAddress, db)
+
+
+class KnownAssociateCRUD(CRUDBase[models.KnownAssociate]):
+    """
+    CRUD Class for known associates
+    """
+
+    def __init__(self, db: Session):
+        super().__init__(models.KnownAssociate, db)

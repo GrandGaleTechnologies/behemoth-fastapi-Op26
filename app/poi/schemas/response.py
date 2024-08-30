@@ -6,6 +6,7 @@ from app.poi.schemas.base import (
     Offense,
     POIApplicationProcess,
     POIBaseInformation,
+    POIOtherInformation,
 )
 
 
@@ -54,6 +55,15 @@ class POIBaseInformationResponse(ResponseSchema):
 
     msg: str = Field(default="POI successfully retreieved")
     data: POIBaseInformation = Field(description="The details of the poi")
+
+
+class POIOtherInformationResponse(ResponseSchema):
+    """
+    Response schema for poi other profile info
+    """
+
+    msg: str = Field(default="POI other profile retreieved successfully")
+    data: POIOtherInformation = Field(description="The poi's other profile info")
 
 
 class IDDocumentResponse(ResponseSchema):

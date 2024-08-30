@@ -1,4 +1,5 @@
 from datetime import date, datetime, time
+
 from pydantic import BaseModel, Field
 
 
@@ -110,6 +111,20 @@ class POIBaseInformation(BaseModel):
         description="The list of iD Documents"
     )
     created_at: datetime = Field(description="The time the poi was created")
+
+
+class POIOtherInformation(BaseModel):
+    """
+    Base schema for poi other information page
+    """
+
+    gsm_numbers: list["GSMNumber"] | None = Field(description="The poi's gsm numbers")
+    residential_addresses: list["ResidentialAddress"] | None = Field(
+        description="The poi's residential addresses"
+    )
+    known_associates: list["KnownAssociate"] | None = Field(
+        description="The poi's known associates"
+    )
 
 
 class IDDocument(BaseModel):
