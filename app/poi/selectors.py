@@ -230,6 +230,10 @@ async def get_poi_by_id(id: int, db: Session, raise_exc: bool = True):
     if not obj and raise_exc:
         raise POINotFound()
 
+    # Check if deleted
+    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+        raise POINotFound()
+
     return obj
 
 
@@ -253,7 +257,7 @@ async def get_id_doc_by_id(id: int, db: Session, raise_exc: bool = True):
     if not obj and raise_exc:
         raise IDDocumentNotFound()
 
-    # Check if delete
+    # Check if deleted
     if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
         raise IDDocumentNotFound()
 
@@ -281,6 +285,10 @@ async def get_gsm_by_id(id: int, db: Session, raise_exc: bool = True):
     # Get gsm
     obj = await gsm_crud.get(id=id)
     if not obj and raise_exc:
+        raise GSMNumberNotFound()
+
+    # Check if deleted
+    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
         raise GSMNumberNotFound()
 
     return obj

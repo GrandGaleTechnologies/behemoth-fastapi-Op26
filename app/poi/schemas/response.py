@@ -92,3 +92,12 @@ class GSMNumberResponse(ResponseSchema):
 
     msg: str = Field(default="GSM retrieved successfully")
     data: GSMNumber = Field(description="The details of the gsm number")
+
+
+class GSMNumberDeleteResponse(ResponseSchema):
+    """
+    Response schema for gsm number delete requests
+    """
+
+    msg: str = Field(default="GSM Number deleted successfully")
+    data: None = None

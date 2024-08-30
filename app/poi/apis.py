@@ -308,3 +308,37 @@ async def route_poi_gsm_edit(
     edited_gsm = await services.edit_gsm(user=curr_user, gsm=gsm, data=data_in, db=db)
 
     return {"data": await format_gsm(gsm=edited_gsm)}
+
+
+@router.delete(
+    "/gsm/{gsm_id}/",
+    summary="Delete GSM Number",
+    response_description="GSM Number Deleted Successfully",
+    status_code=status.HTTP_200_OK,
+    response_model=response.GSMNumberDeleteResponse,
+    tags=[tags.POI_GSM_NUMBER],
+)
+async def route_poi_gsm_delete(
+    gsm_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint deletes a gsm number
+    """
+
+    # Get gsm
+    gsm = cast(models.GSMNumber, await selectors.get_gsm_by_id(id=gsm_id, db=db))
+
+    # Delete doc
+    gsm.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
+    gsm.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="gsm-number",
+        action=f"delete:{gsm.id}",
+        db=db,
+    )
+
+    return {}
