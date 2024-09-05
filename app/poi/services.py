@@ -265,7 +265,7 @@ async def create_poi(user: user_models.User, data: create.POICreate, db: Session
         if data.known_associates:
             for associate in data.known_associates:
                 created_objs.append(
-                    await create_known_associates(
+                    await create_known_associate(
                         user=user, poi=poi, data=associate, db=db
                     )
                 )
@@ -699,14 +699,14 @@ async def edit_residential_address(
 ############################################################
 # KNOWN ASSOCIATES
 ############################################################
-async def create_known_associates(
+async def create_known_associate(
     user: user_models.User,
     poi: models.POI,
     data: create.CreateKnownAssociate,
     db: Session,
 ):
     """
-    Create known associates
+    Create known associate
 
     Args:
         user (user_models.User): The user obj
@@ -753,6 +753,55 @@ async def create_known_associates(
     )
 
     return obj
+
+
+async def edit_known_associate(
+    user: user_models.User,
+    associate: models.KnownAssociate,
+    data: edit.KnownAssociateEdit,
+    db: Session,
+):
+    """
+    Edit known associate
+
+    Args:
+        user (user_models.User): The user obj
+        associate (models.KnownAssociate): The associate obj
+        data (edit.KnownAssociateEdit): The details of the known associate
+        db (Session): The database session
+
+    Return:
+        models.KnownAssociate
+    """
+    changelog = ""
+
+    address_dict = associate.__dict__
+    for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
+        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
+        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+
+        if address_dict[field] and dec(address_dict[field]) != value:
+            changelog += f"- {dec(address_dict[field])} -> {value}\n"
+
+            setattr(associate, field, enc(value))
+        elif not address_dict[field] and value:
+            changelog += f"- {address_dict[field]} -> {value}\n"
+
+            setattr(associate, field, enc(value))
+
+    # Save changes
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="known-associate",
+        action=f"edit:{associate.id}",
+        notes=changelog,
+        db=db,
+    )
+
+    return associate
 
 
 ###############################################################################

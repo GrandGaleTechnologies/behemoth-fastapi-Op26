@@ -80,3 +80,19 @@ class ResidentialAddressEdit(BaseModel):
     state: str = Field(description="State of the address")
     city: str = Field(description="City of the address")
     address: str | None = Field(default=None, description="Street address")
+
+
+class KnownAssociateEdit(BaseModel):
+    """
+    Edit schema for known poi associates
+    """
+
+    full_name: str = Field(description="Full name of the associate")
+    known_gsm_numbers: str | None = Field(default=None, description="Known GSM numbers")
+    relationship: str = Field(description="Relationship with the POI")
+    occupation: str | None = Field(default=None, description="Occupation")
+    residential_address: str | None = Field(
+        default=None, description="Residential address"
+    )
+    last_seen_date: date | None = Field(default=None, description="Last seen date")
+    last_seen_time: time | None = Field(default=None, description="Last seen time")

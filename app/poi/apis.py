@@ -12,6 +12,7 @@ from app.poi import models, selectors, services
 from app.poi.formatters import (
     format_gsm,
     format_id_document,
+    format_known_associate,
     format_poi_application,
     format_poi_base,
     format_residential_address,
@@ -469,6 +470,100 @@ async def route_poi_address_delete(
 #########################################################################
 # KNOWN ASSOCIATES
 #########################################################################
+@router.post(
+    "/{poi_id}/associate",
+    summary="Add POI Known associate",
+    response_description="The details of the poi's known associate",
+    status_code=status.HTTP_201_CREATED,
+    response_model=response.KnownAssociateResponse,
+)
+async def route_poi_associate_create(
+    poi_id: int,
+    associate_in: create.CreateKnownAssociate,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint creates a known associate
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create associate
+    associate = await services.create_known_associate(
+        user=curr_user, poi=poi, data=associate_in, db=db
+    )
+
+    return {"data": await format_known_associate(associate=associate)}
+
+
+@router.put(
+    "/associate/{associate_id}/",
+    summary="Edit known associate",
+    response_description="The new details of the known associate",
+    status_code=status.HTTP_200_OK,
+    response_model=response.KnownAssociateResponse,
+)
+async def route_poi_associate_edit(
+    associate_id: int,
+    associate_in: edit.KnownAssociateEdit,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint edits the known associate
+    """
+
+    # Get associate
+    associate = cast(
+        models.KnownAssociate,
+        await selectors.get_known_associate_by_id(id=associate_id, db=db),
+    )
+
+    # Edit associate
+    new_associate = await services.edit_known_associate(
+        user=curr_user, associate=associate, data=associate_in, db=db
+    )
+
+    return {"data": await format_known_associate(associate=new_associate)}
+
+
+@router.delete(
+    "/associate/{associate_id}/",
+    summary="Delete known associate",
+    response_description="Known associate deleted successfully",
+    status_code=status.HTTP_200_OK,
+    response_model=response.KnownAssociateDeleteResponse,
+)
+async def route_poi_assicate_delete(
+    associate_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint is used to delete known associates
+    """
+
+    # Get associate
+    associate = cast(
+        models.KnownAssociate,
+        await selectors.get_known_associate_by_id(id=associate_id, db=db),
+    )
+
+    # Delete address
+    associate.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
+    associate.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="known-associate",
+        action=f"delete:{associate.id}",
+        db=db,
+    )
+
+    return {}
+
 
 #########################################################################
 # EMPLOYMENT HISTORY

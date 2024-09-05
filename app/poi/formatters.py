@@ -132,7 +132,7 @@ async def format_poi_other_profile(poi: models.POI):
             for address in poi.residential_addresses
         ],
         "known_associates": [
-            await format_known_associates(associate=associate)
+            await format_known_associate(associate=associate)
             for associate in poi.known_associates
         ],
     }
@@ -181,7 +181,7 @@ async def format_residential_address(address: models.ResidentialAddress):
     }
 
 
-async def format_known_associates(associate: models.KnownAssociate):
+async def format_known_associate(associate: models.KnownAssociate):
     """
     Format known associate obj to dict
     """

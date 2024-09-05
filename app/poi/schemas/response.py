@@ -4,6 +4,7 @@ from app.common.schemas import PaginatedResponseSchema, ResponseSchema
 from app.poi.schemas.base import (
     GSMNumber,
     IDDocument,
+    KnownAssociate,
     Offense,
     POIApplicationProcess,
     POIBaseInformation,
@@ -121,4 +122,22 @@ class ResidentialAddressDeleteResponse(ResponseSchema):
     """
 
     msg: str = Field(default="Residential address deleted successfully")
+    data: None = None
+
+
+class KnownAssociateResponse(ResponseSchema):
+    """
+    Response schema for known associates responses
+    """
+
+    msg: str = Field(default="Known associate retreive successfully")
+    data: KnownAssociate = Field(description="The details of the known associate")
+
+
+class KnownAssociateDeleteResponse(ResponseSchema):
+    """
+    Response schema for known associate delete request
+    """
+
+    msg: str = Field(default="Known associate deleted successfully")
     data: None = None

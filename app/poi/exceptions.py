@@ -44,3 +44,12 @@ class ResidentialAddressNotFound(NotFound):
 
     def __init__(self, *, loc: list | None = None):
         super().__init__("Residential Address Not Found", loc=loc)
+
+
+class KnownAssociateNotFound(NotFound):
+    """
+    Exception for 404 Known Associate Not Found
+    """
+
+    def __init__(self, *, loc: list | None = None):
+        super().__init__("Known Associate Not Found", loc=loc)

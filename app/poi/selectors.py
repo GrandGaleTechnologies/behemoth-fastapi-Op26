@@ -14,12 +14,14 @@ from app.poi.crud import (
     POICRUD,
     GSMNumberCRUD,
     IDDocumentCRUD,
+    KnownAssociateCRUD,
     OffenseCRUD,
     ResidentialAddressCRUD,
 )
 from app.poi.exceptions import (
     GSMNumberNotFound,
     IDDocumentNotFound,
+    KnownAssociateNotFound,
     OffeseNotFound,
     POINotFound,
     ResidentialAddressNotFound,
@@ -378,5 +380,35 @@ async def get_residential_address_by_id(id: int, db: Session, raise_exc: bool = 
     # Check deleted
     if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
         raise ResidentialAddressNotFound()
+
+    return obj
+
+
+async def get_known_associate_by_id(id: int, db: Session, raise_exc: bool = True):
+    """
+    Get known associate using its ID
+
+    Args:
+        id (int): The ID of the associate
+        db (Session): The database session
+        raise_exc (bool = True): raise a 404 if not found
+
+    Raises:
+        KnownAssociateNotFound
+
+    Returns:
+        models.KnownAssociate | None
+    """
+    # Init crud
+    address_crud = KnownAssociateCRUD(db=db)
+
+    # get obj
+    obj = await address_crud.get(id=id)
+    if not obj and raise_exc:
+        raise KnownAssociateNotFound()
+
+    # Check if deleted
+    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+        raise KnownAssociateNotFound()
 
     return obj
