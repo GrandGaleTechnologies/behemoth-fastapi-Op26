@@ -8,6 +8,7 @@ from app.poi.schemas.base import (
     POIApplicationProcess,
     POIBaseInformation,
     POIOtherInformation,
+    ResidentialAddress,
 )
 
 
@@ -100,4 +101,24 @@ class GSMNumberDeleteResponse(ResponseSchema):
     """
 
     msg: str = Field(default="GSM Number deleted successfully")
+    data: None = None
+
+
+class ResidentialAddressResponse(ResponseSchema):
+    """
+    Response schema for poi residential address
+    """
+
+    msg: str = Field(default="Residential address retreived successfully")
+    data: ResidentialAddress = Field(
+        description="The details of the residential address"
+    )
+
+
+class ResidentialAddressDeleteResponse(ResponseSchema):
+    """
+    Response schema for residential address delete requests
+    """
+
+    msg: str = Field(default="Residential address deleted successfully")
     data: None = None

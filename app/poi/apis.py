@@ -14,6 +14,7 @@ from app.poi.formatters import (
     format_id_document,
     format_poi_application,
     format_poi_base,
+    format_residential_address,
 )
 from app.poi.routes.offense import router as poi_offense_router
 from app.poi.schemas import create, edit, response
@@ -354,7 +355,7 @@ async def route_poi_gsm_delete(
     # Get gsm
     gsm = cast(models.GSMNumber, await selectors.get_gsm_by_id(id=gsm_id, db=db))
 
-    # Delete doc
+    # Delete gsm
     gsm.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
     gsm.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
     db.commit()
@@ -368,3 +369,123 @@ async def route_poi_gsm_delete(
     )
 
     return {}
+
+
+#########################################################################
+# RESIDENTIAL ADDRESS
+#########################################################################
+@router.post(
+    "/{poi_id}/address",
+    summary="Add POI residential address",
+    response_description="The details of the residential address",
+    status_code=status.HTTP_201_CREATED,
+    response_model=response.ResidentialAddressResponse,
+)
+async def route_poi_address_create(
+    poi_id: int,
+    address_in: create.CreateResidentialAddress,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint creates a residential address
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create address
+    address = await services.create_residential_address(
+        user=curr_user, poi=poi, data=address_in, db=db
+    )
+
+    return {"data": await format_residential_address(address=address)}
+
+
+@router.put(
+    "/address/{address_id}/",
+    summary="Edit POI residential addresses",
+    response_description="The new details of the residential address",
+    status_code=status.HTTP_200_OK,
+    response_model=response.ResidentialAddressResponse,
+)
+async def route_poi_address_edit(
+    address_id: int,
+    address_in: edit.ResidentialAddressEdit,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint is used to edit the poi's residential address
+    """
+
+    # Get address
+    address = await selectors.get_residential_address_by_id(id=address_id, db=db)
+
+    # edit address
+    new_address = await services.edit_residential_address(
+        user=curr_user, address=address, data=address_in, db=db
+    )
+
+    return {"data": await format_residential_address(address=new_address)}
+
+
+@router.delete(
+    "/address/{address_id}/",
+    summary="Delete Residential Address",
+    response_description="Residential Address Deleted Successfully",
+    status_code=status.HTTP_200_OK,
+    response_model=response.ResidentialAddressDeleteResponse,
+)
+async def route_poi_address_delete(
+    address_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint deletes a residential address
+    """
+
+    # Get address
+    address = cast(
+        models.ResidentialAddress,
+        await selectors.get_residential_address_by_id(id=address_id, db=db),
+    )
+
+    # Delete address
+    address.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
+    address.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="residential-address",
+        action=f"delete:{address.id}",
+        db=db,
+    )
+
+    return {}
+
+
+#########################################################################
+# KNOWN ASSOCIATES
+#########################################################################
+
+#########################################################################
+# EMPLOYMENT HISTORY
+#########################################################################
+
+#########################################################################
+# VETERAN STATUS
+#########################################################################
+
+#########################################################################
+# EDUCATIONAL BACKGROUND
+#########################################################################
+
+#########################################################################
+# POI OFFENSE
+#########################################################################
+
+#########################################################################
+# FREQUENTED SPOTS
+#########################################################################

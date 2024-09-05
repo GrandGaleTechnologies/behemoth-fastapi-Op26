@@ -69,3 +69,14 @@ class GSMNumberEdit(BaseModel):
     number: str = Field(description="GSM number")
     last_call_date: date | None = Field(default=None, description="Last call date")
     last_call_time: time | None = Field(default=None, description="Last call time")
+
+
+class ResidentialAddressEdit(BaseModel):
+    """
+    Edit schema for poi residential addresses
+    """
+
+    country: str = Field(description="Country of the address")
+    state: str = Field(description="State of the address")
+    city: str = Field(description="City of the address")
+    address: str | None = Field(default=None, description="Street address")

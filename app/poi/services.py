@@ -647,6 +647,55 @@ async def create_residential_address(
     return obj
 
 
+async def edit_residential_address(
+    user: user_models.User,
+    address: models.ResidentialAddress,
+    data: edit.ResidentialAddressEdit,
+    db: Session,
+):
+    """
+    Edit residential address
+
+    Args:
+        user (user_models.User): The user obj
+        address (models.ResidentialAddress): The address obj
+        data (edit.ResidentialAddressEdit): The details of the residential address
+        db (Session): The database session
+
+    Returns:
+        models.ResidentialAddress
+    """
+    changelog = ""
+
+    address_dict = address.__dict__
+    for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
+        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
+        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+
+        if address_dict[field] and dec(address_dict[field]) != value:
+            changelog += f"- {dec(address_dict[field])} -> {value}\n"
+
+            setattr(address, field, enc(value))
+        elif not address_dict[field] and value:
+            changelog += f"- {address_dict[field]} -> {value}\n"
+
+            setattr(address, field, enc(value))
+
+    # Save changes
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="residential-address",
+        action=f"edit:{address.id}",
+        notes=changelog,
+        db=db,
+    )
+
+    return address
+
+
 ############################################################
 # KNOWN ASSOCIATES
 ############################################################
@@ -704,6 +753,11 @@ async def create_known_associates(
     )
 
     return obj
+
+
+###############################################################################
+# EMPLOYMENT HISTORY
+###############################################################################
 
 
 async def create_employment_history(

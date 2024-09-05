@@ -10,12 +10,19 @@ from app.common.types import PaginationParamsType
 from app.common.utils import find_all_matches, get_last_day_of_month, paginate_list
 from app.core.settings import get_settings
 from app.poi import models, utils
-from app.poi.crud import POICRUD, GSMNumberCRUD, IDDocumentCRUD, OffenseCRUD
+from app.poi.crud import (
+    POICRUD,
+    GSMNumberCRUD,
+    IDDocumentCRUD,
+    OffenseCRUD,
+    ResidentialAddressCRUD,
+)
 from app.poi.exceptions import (
     GSMNumberNotFound,
     IDDocumentNotFound,
     OffeseNotFound,
     POINotFound,
+    ResidentialAddressNotFound,
 )
 
 # Globals
@@ -341,5 +348,35 @@ async def get_gsm_by_id(id: int, db: Session, raise_exc: bool = True):
     # Check if deleted
     if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
         raise GSMNumberNotFound()
+
+    return obj
+
+
+async def get_residential_address_by_id(id: int, db: Session, raise_exc: bool = True):
+    """
+    Get residential address using its ID
+
+    Args:
+        id (int): The ID of the address
+        db (Session): The database session
+        raise_exc (bool = True): raise a 404 if not found
+
+    Raises:
+        ResidentialAddressNotFound
+
+    Returns:
+        models.ResidentialAddress | None
+    """
+    # Init crud
+    address_crud = ResidentialAddressCRUD(db=db)
+
+    # get obj
+    obj = await address_crud.get(id=id)
+    if not obj and raise_exc:
+        raise ResidentialAddressNotFound()
+
+    # Check deleted
+    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+        raise ResidentialAddressNotFound()
 
     return obj

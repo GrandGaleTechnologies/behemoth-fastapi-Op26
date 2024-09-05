@@ -1,4 +1,4 @@
-from app.common.exceptions import BadRequest, NotFound
+from app.common.exceptions import NotFound
 
 
 class OffeseNotFound(NotFound):
@@ -35,3 +35,12 @@ class GSMNumberNotFound(NotFound):
 
     def __init__(self, *, loc: list | None = None):
         super().__init__("GSM Number Not Found", loc=loc)
+
+
+class ResidentialAddressNotFound(NotFound):
+    """
+    Exception for 404 Residential Address Not Found
+    """
+
+    def __init__(self, *, loc: list | None = None):
+        super().__init__("Residential Address Not Found", loc=loc)
