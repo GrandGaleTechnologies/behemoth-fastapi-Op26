@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 class CustomHTTPException(Exception):
     """
     Common base class for all http exceptions
@@ -7,6 +10,17 @@ class CustomHTTPException(Exception):
         self.status_code = status_code
         self.msg = msg
         self.loc = loc
+
+
+class InternalServerError(Exception):
+    """
+    Common base class for all 500 internal server error responses
+    """
+
+    def __init__(self, msg: str, *, loc: str):
+        self.msg = msg
+        self.loc = loc
+        self.timestamp = datetime.now()
 
 
 class BadRequest(CustomHTTPException):

@@ -1,4 +1,4 @@
-from app.common.exceptions import NotFound
+from app.common.exceptions import BadRequest, NotFound
 
 
 class OffeseNotFound(NotFound):

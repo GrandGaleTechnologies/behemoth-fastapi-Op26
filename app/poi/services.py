@@ -8,18 +8,23 @@ import aiofiles
 from sqlalchemy.orm import Session
 
 from app.common.encryption import EncryptionManager
-from app.common.exceptions import BadRequest
+from app.common.exceptions import BadRequest, InternalServerError
 from app.common.utils import dict_to_string
 from app.core.settings import get_settings
-from app.poi import models
+from app.poi import models, selectors
 from app.poi.crud import (
     POICRUD,
+    EducationalBackgroundCRUD,
+    EmploymentHistoryCRUD,
+    FrequentedSpotCRUD,
     GSMNumberCRUD,
     IDDocumentCRUD,
     KnownAssociateCRUD,
     OffenseCRUD,
     POIApplicationProcess,
+    POIOffenseCRUD,
     ResidentialAddressCRUD,
+    VeteranStatusCRUD,
 )
 from app.poi.schemas import create, edit
 from app.user import models as user_models
@@ -41,6 +46,10 @@ encrypt_man_dict = {
     "time": {
         "enc": encryption_manager.encrypt_time,
         "dec": encryption_manager.decrypt_time,
+    },
+    "bool": {
+        "enc": encryption_manager.encrypt_boolean,
+        "dec": encryption_manager.decrypt_boolean,
     },
 }
 
@@ -147,9 +156,7 @@ async def edit_offense(
     return offense
 
 
-async def create_poi(
-    user: user_models.User, data: create.POIBaseInformationCreate, db: Session
-):
+async def create_poi(user: user_models.User, data: create.POICreate, db: Session):
     """
     Create poi
 
@@ -166,7 +173,9 @@ async def create_poi(
     """
     # Init crud
     poi_crud = POICRUD(db=db)
-    id_crud = IDDocumentCRUD(db=db)
+
+    # list for del
+    created_objs = []
 
     # encrypt data
     encrypted_poi = {
@@ -198,40 +207,111 @@ async def create_poi(
         "notes": encryption_manager.encrypt_str(data.notes) if data.notes else None,
     }
 
-    # Create poi
-    poi = await poi_crud.create(data=encrypted_poi)
+    try:
+        # Create poi
+        poi = await poi_crud.create(data=encrypted_poi)
+        created_objs.append(poi)
 
-    # Create ID documents
-    if data.id_documents:
-        _ = [
-            await id_crud.create(
-                data={
-                    "poi_id": poi.id,
-                    "type": encryption_manager.encrypt_str(doc.type),
-                    "id_number": encryption_manager.encrypt_str(doc.id_number),
-                },
+        # Create veteran status
+        created_objs.append(
+            await create_veteran_status(
+                user=user, poi=poi, data=data.veteran_status, db=db
             )
-            for doc in data.id_documents
-        ]
+        )
 
-    # Create file for pfp
-    if data.pfp:
-        # Decode string
-        try:
-            img_data = base64.b64decode(data.pfp)
-        except binascii.Error:
-            raise BadRequest("Invalid pfp url bytes", loc=["body", "pfp"])
+        # Create file for pfp
+        if data.pfp:
+            # Decode string
+            try:
+                img_data = base64.b64decode(data.pfp)
+            except binascii.Error:
+                raise BadRequest("Invalid pfp url bytes", loc=["body", "pfp"])
 
-        # Save data to file
-        loc = f"{settings.UPLOAD_DIR}/poi/{poi.id}/pfp/pfp_{random.randint(1, 50)}.jpeg"
-        os.makedirs(os.path.dirname(loc), exist_ok=True)
+            # Save data to file
+            loc = f"{settings.UPLOAD_DIR}/poi/{poi.id}/pfp/pfp_{random.randint(1, 50)}.jpeg"
+            os.makedirs(os.path.dirname(loc), exist_ok=True)
 
-        async with aiofiles.open(loc, "wb") as file:
-            await file.write(img_data)
+            async with aiofiles.open(loc, "wb") as file:
+                await file.write(img_data)
 
-        # Set url
-        poi.pfp_url = encryption_manager.encrypt_str(file.name)  # type: ignore
+            # Set url
+            poi.pfp_url = encryption_manager.encrypt_str(file.name)  # type: ignore
+            db.commit()
+
+        # Create ID documents
+        if data.id_documents:
+            for doc in data.id_documents:
+                created_objs.append(
+                    await create_id_doc(user=user, poi=poi, data=doc, db=db)
+                )
+
+        # Create GSM
+        if data.gsm_numbers:
+            for gsm in data.gsm_numbers:
+                created_objs.append(
+                    await create_gsm_number(user=user, poi=poi, data=gsm, db=db)
+                )
+
+        # Create Residential addresses
+        if data.residential_addresses:
+            for address in data.residential_addresses:
+                created_objs.append(
+                    await create_residential_address(
+                        user=user, poi=poi, data=address, db=db
+                    )
+                )
+
+        # Create known associates
+        if data.known_associates:
+            for associate in data.known_associates:
+                created_objs.append(
+                    await create_known_associates(
+                        user=user, poi=poi, data=associate, db=db
+                    )
+                )
+
+        # Create employment history
+        if data.employment_history:
+            for history in data.employment_history:
+                created_objs.append(
+                    await create_employment_history(
+                        user=user, poi=poi, data=history, db=db
+                    )
+                )
+
+        # Create educational background
+        if data.educational_background:
+            for background in data.educational_background:
+                created_objs.append(
+                    created_objs.append(
+                        await create_educational_background(
+                            user=user, poi=poi, data=background, db=db
+                        )
+                    )
+                )
+
+        # Create convictions
+        if data.convictions:
+            for conv in data.convictions:
+                offense = await selectors.get_offense_by_id(id=conv.offense_id, db=db)
+                created_objs.append(
+                    await create_poi_offense(
+                        user=user, poi=poi, offense=offense, data=conv, db=db
+                    )
+                )
+
+        # Create frequented spots
+        if data.frequented_spots:
+            for spot in data.frequented_spots:
+                created_objs.append(
+                    await create_frequented_spot(user=user, poi=poi, data=spot, db=db)
+                )
+    except Exception as e:
+        for obj in created_objs[:-1]:
+            db.delete(obj)
         db.commit()
+
+        raise e
 
     # Create logs
     await create_log(
@@ -618,6 +698,255 @@ async def create_known_associates(
     await create_log(
         user=user,
         resource="known-associates",
+        action=f"create:{obj.id}",
+        notes=await dict_to_string(data.model_dump()),
+        db=db,
+    )
+
+    return obj
+
+
+async def create_employment_history(
+    user: user_models.User,
+    poi: models.POI,
+    data: create.CreateEmploymentHistory,
+    db: Session,
+):
+    """
+    Create employment history
+
+    Args:
+        user (user_models.User): The user obj
+        poi (models.POI): The poi obj
+        data (create.CreateEmploymentHistory): The poi's employment history
+        db (Session): The database session
+
+    Returns:
+        models.EmploymentHistory
+    """
+    # Init crud
+    employment_crud = EmploymentHistoryCRUD(db=db)
+
+    # create obj
+    enc_str = encrypt_man_dict["str"]["enc"]
+    enc_date = encrypt_man_dict["date"]["enc"]
+    enc_bool = encrypt_man_dict["bool"]["enc"]
+
+    obj = await employment_crud.create(
+        data={
+            "poi_id": poi.id,
+            "company": enc_str(data.company),
+            "employment_type": enc_str(data.employment_type),
+            "from_date": enc_date(data.from_date) if data.from_date else None,
+            "to_date": enc_date(data.to_date) if data.to_date else None,
+            "current_job": enc_bool(data.current_job),
+            "description": enc_str(data.description) if data.description else None,
+        }
+    )
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="employment-history",
+        action=f"create:{obj.id}",
+        notes=await dict_to_string(data.model_dump()),
+        db=db,
+    )
+
+    return obj
+
+
+async def create_veteran_status(
+    user: user_models.User,
+    poi: models.POI,
+    data: create.CreateVeteranStatus,
+    db: Session,
+):
+    """
+    Create veteran status
+
+    Args:
+        user (user_models.User): The user obj
+        poi (models.POI): The poi obj
+        data (create.CreateVeteranStatus): The veteran status details
+        db (Session): The database session
+
+    Returns:
+        models.VeteranStatus
+    """
+    # Init crud
+    veteran_crud = VeteranStatusCRUD(db=db)
+
+    # Check: Veteran status exists
+    if await veteran_crud.get(poi_id=poi.id):
+        raise InternalServerError(
+            f"POI[{poi.id}] Already ha a veteran status",
+            loc="app.poi.services.create_veteran_status",
+        )
+
+    # Create obj
+    enc_str = encrypt_man_dict["str"]["enc"]
+    enc_bool = encrypt_man_dict["bool"]["enc"]
+    enc_date = encrypt_man_dict["date"]["enc"]
+
+    obj = await veteran_crud.create(
+        data={
+            "poi_id": poi.id,
+            "is_veteran": enc_bool(data.is_veteran),
+            "section": enc_str(data.section),
+            "location": enc_str(data.location),
+            "id_card": enc_str(data.id_card) if data.id_card else None,
+            "id_card_issuer": enc_str(data.id_card_issuer)
+            if data.id_card_issuer
+            else None,
+            "from_date": enc_date(data.from_date) if data.from_date else None,
+            "to_date": enc_date(data.to_date) if data.to_date else None,
+            "notes": enc_str(data.notes) if data.notes else None,
+        }
+    )
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="veteran-status",
+        action=f"create:{obj.id}",
+        notes=await dict_to_string(data.model_dump()),
+        db=db,
+    )
+
+    return obj
+
+
+async def create_educational_background(
+    user: user_models.User,
+    poi: models.POI,
+    data: create.CreateEducationalBackground,
+    db: Session,
+):
+    # Init crud
+    background_crud = EducationalBackgroundCRUD(db=db)
+
+    # create educatonal background
+    enc_str = encrypt_man_dict["str"]["enc"]
+    enc_date = encrypt_man_dict["date"]["enc"]
+    enc_bool = encrypt_man_dict["bool"]["enc"]
+    obj = await background_crud.create(
+        data={
+            "poi_id": poi.id,
+            "type": enc_str(data.type),
+            "institute_name": enc_str(data.institute_name),
+            "country": enc_str(data.country),
+            "state": enc_str(data.state),
+            "from_date": enc_date(data.from_date) if data.from_date else None,
+            "to_date": enc_date(data.to_date) if data.to_date else None,
+            "current_institute": enc_bool(data.current_institute),
+        }
+    )
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="veteran-status",
+        action=f"create:{obj.id}",
+        notes=await dict_to_string(data.model_dump()),
+        db=db,
+    )
+    return obj
+
+
+async def create_poi_offense(
+    user: user_models.User,
+    poi: models.POI,
+    offense: models.Offense,
+    data: create.POIOffenseCreate,
+    db: Session,
+):
+    """
+    Create poi offense
+
+    Args:
+        user (user_models.User): The user obj
+        poi (models.POI): The poi obj
+        offense (models.Offense): The offense obj
+        data (create.POIOffenseCreate): The details of the conviction
+        db (Session): The database session
+
+    Returns:
+        models.POIOffense
+    """
+    # Init crud
+    poi_offense_crud = POIOffenseCRUD(db=db)
+
+    # create conviction
+    enc_str = encrypt_man_dict["str"]["enc"]
+    enc_date = encrypt_man_dict["date"]["enc"]
+
+    obj = await poi_offense_crud.create(
+        data={
+            "poi_id": poi.id,
+            "offense_id": offense.id,
+            "case_id": enc_str(data.case_id) if data.case_id else None,
+            "date_convicted": enc_date(data.date_convicted)
+            if data.date_convicted
+            else None,
+            "notes": enc_str(data.notes) if data.notes else None,
+        }
+    )
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="poi-offense",
+        action=f"create:{obj.id}",
+        notes=await dict_to_string(data.model_dump()),
+        db=db,
+    )
+
+    return obj
+
+
+async def create_frequented_spot(
+    user: user_models.User,
+    poi: models.POI,
+    data: create.CreateFrequentedSpot,
+    db: Session,
+):
+    """
+    Create frequented spot
+
+    Args:
+        user (user_models.User): The user obj
+        poi (models.POI): The poi obj
+        data (create.CreatedFrequentedSpot): The spot details
+        db (Session): The database session
+
+    Returns:
+        models.FrequentedSpot
+    """
+    # Init crud
+    spot_crud = FrequentedSpotCRUD(db=db)
+
+    # create spot
+    enc_str = encrypt_man_dict["str"]["enc"]
+    enc_date = encrypt_man_dict["date"]["enc"]
+
+    obj = await spot_crud.create(
+        data={
+            "poi_id": poi.id,
+            "country": enc_str(data.country),
+            "state": enc_str(data.state),
+            "lga": enc_str(data.lga),
+            "address": enc_str(data.address),
+            "from_date": enc_date(data.from_date) if data.from_date else None,
+            "to_date": enc_date(data.to_date) if data.to_date else None,
+            "notes": enc_str(data.notes) if data.notes else None,
+        }
+    )
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="frequented-spot",
         action=f"create:{obj.id}",
         notes=await dict_to_string(data.model_dump()),
         db=db,

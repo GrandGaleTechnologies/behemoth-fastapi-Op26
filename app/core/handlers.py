@@ -3,9 +3,8 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import ORJSONResponse
 
-from app.common.exceptions import CustomHTTPException
+from app.common.exceptions import CustomHTTPException, InternalServerError
 from app.core.settings import get_settings
-
 
 # Globals
 settings = get_settings()
@@ -45,6 +44,25 @@ async def request_validation_exception_handler(_: Request, exc: RequestValidatio
             {
                 "status": "error",
                 "error": {"msg": error["msg"], "loc": error["loc"]},
+                "data": None,
+            }
+        ),
+    )
+
+
+async def internal_server_error_exception_handler(_: Request, exc: InternalServerError):
+    """
+    Exception handler for 'InternalServerError' exception
+    """
+    # Send email to staff
+    # sendgrid.send_email()
+    print(exc)
+    return ORJSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=jsonable_encoder(
+            {
+                "status": "error",
+                "error": {"msg": "Internal Server Error", "loc": []},
                 "data": None,
             }
         ),

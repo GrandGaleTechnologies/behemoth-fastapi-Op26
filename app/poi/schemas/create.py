@@ -12,9 +12,9 @@ class CreateOffense(BaseModel):
     description: str = Field(description="Description of the offense")
 
 
-class POIBaseInformationCreate(BaseModel):
+class POICreate(BaseModel):
     """
-    Create schema for base POI information
+    Create schema for POI
     """
 
     # Basic Information
@@ -36,14 +36,6 @@ class POIBaseInformationCreate(BaseModel):
         default=None, description="The list of ID Documents"
     )
 
-
-class POIOtherProfileCreate(BaseModel):
-    """
-    Create schema for other profile poi information
-    """
-
-    # Other Profiles
-
     gsm_numbers: list["CreateGSMNumber"] | None = Field(
         default=None, description="The list of the poi's gsm numbers"
     )
@@ -54,61 +46,31 @@ class POIOtherProfileCreate(BaseModel):
         default=None, description="The list of the poi's known associates"
     )
 
-
-class POIEmploymentHistoryCreate(BaseModel):
-    """
-    Create schema for poi employment history
-    """
-
     # Employment history
     employment_history: list["CreateEmploymentHistory"] | None = Field(
         default=None, description="The poi's employment history"
     )
 
-
-class POIVeteranStatusCreate(BaseModel):
-    """
-    Create schema for poi veteran status information
-    """
-
     # Veteran Status
-    veteran_status: list["CreateVeteranStatus"] = Field(
+    veteran_status: "CreateVeteranStatus" = Field(
         description="The poi's veteran status"
     )
-
-
-class POIEducationalBackground(BaseModel):
-    """
-    Create schema for poi educational background
-    """
 
     # Educational Background
     educational_background: list["CreateEducationalBackground"] | None = Field(
         default=None, description="The poi's educational background"
     )
 
-
-class POICaseReportCreate(BaseModel):
-    """
-    Create schema for poi case report information
-    """
-
     # Case report
-    convictions: list["CreateOffense"] | None = Field(
+    convictions: list["POIOffenseCreate"] | None = Field(
         default=None, description="The poi's convictions"
     )
     frequented_spots: list["CreateFrequentedSpot"] | None = Field(
         default=None, description="The poi's frequented spots"
     )
 
-
-class POIFingerprintCreate(BaseModel):
-    """
-    Create schema for poi fingerprint
-    """
-
-    # Fingerprint
-    fingerprints: "CreateFingerprint" = Field(description="The poi's fingerprints")
+    # # Fingerprint
+    # fingerprints: "CreateFingerprint" = Field(description="The poi's fingerprints")
 
 
 class CreateIDDocument(BaseModel):
@@ -198,6 +160,19 @@ class CreateEducationalBackground(BaseModel):
     from_date: date | None = Field(default=None, description="Start date of education")
     to_date: date | None = Field(default=None, description="End date of education")
     current_institute: bool = Field(description="Is this the current institute")
+
+
+class POIOffenseCreate(BaseModel):
+    """
+    Create schema for poi offenses
+    """
+
+    offense_id: int = Field(description="The ID of the offense")
+    case_id: str | None = Field(default=None, description="The id of the case")
+    date_convicted: date | None = Field(
+        default=None, description="The date the poi was convicted"
+    )
+    notes: str | None = Field(default=None, description="Notes on the conviction")
 
 
 class CreateFrequentedSpot(BaseModel):

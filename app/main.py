@@ -1,5 +1,5 @@
-from contextlib import asynccontextmanager
 import os
+from contextlib import asynccontextmanager
 
 from anyio import to_thread
 from fastapi import Depends, FastAPI
@@ -10,10 +10,11 @@ from fastapi.responses import FileResponse, ORJSONResponse
 from sqlalchemy.orm import Session
 
 from app.common.dependencies import get_session
-from app.common.exceptions import CustomHTTPException, NotFound
+from app.common.exceptions import CustomHTTPException, InternalServerError, NotFound
 from app.core.handlers import (
     base_exception_handler,
     custom_http_exception_handler,
+    internal_server_error_exception_handler,
     request_validation_exception_handler,
 )
 from app.poi.apis import router as poi_router
@@ -68,6 +69,7 @@ app.add_middleware(
 # Exception Handlers
 app.add_exception_handler(Exception, base_exception_handler)
 app.add_exception_handler(RequestValidationError, request_validation_exception_handler)  # type: ignore
+app.add_exception_handler(InternalServerError, internal_server_error_exception_handler)  # type: ignore
 app.add_exception_handler(CustomHTTPException, custom_http_exception_handler)  # type: ignore
 
 

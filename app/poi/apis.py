@@ -14,7 +14,6 @@ from app.poi.formatters import (
     format_id_document,
     format_poi_application,
     format_poi_base,
-    format_poi_other_profile,
 )
 from app.poi.routes.offense import router as poi_offense_router
 from app.poi.schemas import create, edit, response
@@ -62,7 +61,7 @@ async def route_poi_application_process(
     response_model=response.POIBaseInformationResponse,
 )
 async def route_poi_create(
-    poi_in: create.POIBaseInformationCreate,
+    poi_in: create.POICreate,
     curr_user: CurrentUser,
     db: DatabaseSession,
 ):
@@ -74,7 +73,7 @@ async def route_poi_create(
     poi = await services.create_poi(user=curr_user, data=poi_in, db=db)
 
     # Start application process
-    await services.create_poi_application_process(poi=poi, db=db)
+    # await services.create_poi_application_process(poi=poi, db=db)
 
     return {"data": await format_poi_base(poi=poi)}
 
@@ -144,50 +143,50 @@ async def route_poi_base_info(poi_id: int, curr_user: CurrentUser, db: DatabaseS
 #################################################################
 # Other profile
 #################################################################
-@router.post(
-    "/{poi_id}/other",
-    summary="Get POI other profile",
-    response_description="The POIs other profile",
-    status_code=status.HTTP_200_OK,
-    response_model=response.POIOtherInformationResponse,
-    tags=[tags.POI_OTHER_PROFILE],
-)
-async def route_poi_other_create(
-    poi_id: int,
-    data_in: create.POIOtherProfileCreate,
-    curr_user: CurrentUser,
-    db: DatabaseSession,
-):
-    """
-    This endpoint adds the poi's other profile information
-    """
+# @router.post(
+#     "/{poi_id}/other",
+#     summary="Get POI other profile",
+#     response_description="The POIs other profile",
+#     status_code=status.HTTP_200_OK,
+#     response_model=response.POIOtherInformationResponse,
+#     tags=[tags.POI_OTHER_PROFILE],
+# )
+# async def route_poi_other_create(
+#     poi_id: int,
+#     data_in: create.POIOtherProfileCreate,
+#     curr_user: CurrentUser,
+#     db: DatabaseSession,
+# ):
+#     """
+#     This endpoint adds the poi's other profile information
+#     """
 
-    # Get poi
-    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+#     # Get poi
+#     poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
 
-    # Create gsm numbers
-    if data_in.gsm_numbers:
-        for gsm in data_in.gsm_numbers:
-            await services.create_gsm_number(user=curr_user, poi=poi, data=gsm, db=db)
+#     # Create gsm numbers
+#     if data_in.gsm_numbers:
+#         for gsm in data_in.gsm_numbers:
+#             await services.create_gsm_number(user=curr_user, poi=poi, data=gsm, db=db)
 
-    # Create residential addresses
-    if data_in.residential_addresses:
-        for address in data_in.residential_addresses:
-            await services.create_residential_address(
-                user=curr_user, poi=poi, data=address, db=db
-            )
+#     # Create residential addresses
+#     if data_in.residential_addresses:
+#         for address in data_in.residential_addresses:
+#             await services.create_residential_address(
+#                 user=curr_user, poi=poi, data=address, db=db
+#             )
 
-    # Create known associates
-    if data_in.known_associates:
-        for associate in data_in.known_associates:
-            await services.create_known_associates(
-                user=curr_user, poi=poi, data=associate, db=db
-            )
+#     # Create known associates
+#     if data_in.known_associates:
+#         for associate in data_in.known_associates:
+#             await services.create_known_associates(
+#                 user=curr_user, poi=poi, data=associate, db=db
+#             )
 
-    # Refresh poi
-    db.refresh(poi)
+#     # Refresh poi
+#     db.refresh(poi)
 
-    return {"data": await format_poi_other_profile(poi=poi)}
+#     return {"data": await format_poi_other_profile(poi=poi)}
 
 
 ######################################################################

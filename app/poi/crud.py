@@ -74,3 +74,39 @@ class KnownAssociateCRUD(CRUDBase[models.KnownAssociate]):
 
     def __init__(self, db: Session):
         super().__init__(models.KnownAssociate, db)
+
+
+class EmploymentHistoryCRUD(CRUDBase[models.EmploymentHistory]):
+    """
+    CRUD Class for employment history
+    """
+
+    def __init__(self, db: Session):
+        super().__init__(models.EmploymentHistory, db)
+
+
+class VeteranStatusCRUD(CRUDBase[models.VeteranStatus]):
+    """
+    CRUD Class for veteran status
+    """
+
+    def __init__(self, db: Session):
+        super().__init__(models.VeteranStatus, db)
+
+
+class EducationalBackgroundCRUD(CRUDBase[models.EducationalBackground]):
+    """
+    CRUD Class for educational background
+    """
+
+    def __init__(self, db: Session):
+        super().__init__(models.EducationalBackground, db)
+
+
+class FrequentedSpotCRUD(CRUDBase[models.FrequentedSpot]):
+    """
+    CRUD Class for frequented spot
+    """
+
+    def __init__(self, db: Session):
+        super().__init__(models.FrequentedSpot, db)
