@@ -12,6 +12,7 @@ from app.core.settings import get_settings
 from app.poi import models, utils
 from app.poi.crud import (
     POICRUD,
+    EmploymentHistoryCRUD,
     GSMNumberCRUD,
     IDDocumentCRUD,
     KnownAssociateCRUD,
@@ -19,6 +20,7 @@ from app.poi.crud import (
     ResidentialAddressCRUD,
 )
 from app.poi.exceptions import (
+    EmploymentHistoryNotFound,
     GSMNumberNotFound,
     IDDocumentNotFound,
     KnownAssociateNotFound,
@@ -410,5 +412,35 @@ async def get_known_associate_by_id(id: int, db: Session, raise_exc: bool = True
     # Check if deleted
     if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
         raise KnownAssociateNotFound()
+
+    return obj
+
+
+async def get_employment_history_by_id(id: int, db: Session, raise_exc: bool = True):
+    """
+    Get employment history by id
+
+    Args:
+        id (int): The ID of the employment history
+        db (Session): The database session
+        raise_exc (bool = True): raise a 404 if not found
+
+    Raises:
+        EmploymentHistoryNotFound
+
+    Returns:
+        models.EmploymentHistory | None
+    """
+    # Init crud
+    history_crud = EmploymentHistoryCRUD(db=db)
+
+    # Get obj
+    obj = await history_crud.get(id=id)
+    if not obj and raise_exc:
+        raise EmploymentHistoryNotFound()
+
+    # Check if deleted
+    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+        raise EmploymentHistoryNotFound()
 
     return obj

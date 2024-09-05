@@ -96,3 +96,16 @@ class KnownAssociateEdit(BaseModel):
     )
     last_seen_date: date | None = Field(default=None, description="Last seen date")
     last_seen_time: time | None = Field(default=None, description="Last seen time")
+
+
+class EmploymentHistoryEdit(BaseModel):
+    """
+    Edit schema for poi employment histories
+    """
+
+    company: str = Field(description="Company name")
+    employment_type: str = Field(description="Type of employment")
+    from_date: date | None = Field(default=None, description="Employment start date")
+    to_date: date | None = Field(default=None, description="Employment end date")
+    current_job: bool = Field(description="Is this the current job")
+    description: str | None = Field(default=None, description="Job description")

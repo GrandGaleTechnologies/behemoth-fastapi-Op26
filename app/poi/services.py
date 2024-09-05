@@ -859,6 +859,60 @@ async def create_employment_history(
     return obj
 
 
+async def edit_employment_history(
+    user: user_models.User,
+    history: models.EmploymentHistory,
+    data: edit.EmploymentHistoryEdit,
+    db: Session,
+):
+    """
+    Edit employment history
+
+    Args:
+        user (user_models.User): The user obj
+        history (models.EmploymentHistory): The history obj
+        data (edit.EmploymentHistoryEdit): The details of the employment history
+        db (Session): The database session
+
+    Returns:
+        models.EmploymentHistory
+    """
+    changelog = ""
+
+    history_dict = history.__dict__
+    for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
+        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
+        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+
+        if history_dict[field] and dec(history_dict[field]) != value:
+            changelog += f"- {dec(history_dict[field])} -> {value}\n"
+
+            setattr(history, field, enc(value))
+        elif not history_dict[field] and value:
+            changelog += f"- {history_dict[field]} -> {value}\n"
+
+            setattr(history, field, enc(value))
+
+    # Save changes
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="employment-history",
+        action=f"edit:{history.id}",
+        notes=changelog,
+        db=db,
+    )
+
+    return history
+
+
+#############################################################################
+# VETERAN STATUS
+#############################################################################
+
+
 async def create_veteran_status(
     user: user_models.User,
     poi: models.POI,

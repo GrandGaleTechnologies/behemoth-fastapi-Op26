@@ -10,6 +10,7 @@ from app.core.settings import get_settings
 from app.core.tags import get_tags
 from app.poi import models, selectors, services
 from app.poi.formatters import (
+    format_employment_history,
     format_gsm,
     format_id_document,
     format_known_associate,
@@ -568,6 +569,100 @@ async def route_poi_assicate_delete(
 #########################################################################
 # EMPLOYMENT HISTORY
 #########################################################################
+@router.post(
+    "/{poi_id}/employment",
+    summary="Add POI Employment History",
+    response_description="The details of the employment history",
+    status_code=status.HTTP_201_CREATED,
+    response_model=response.EmploymentHistoryResponse,
+)
+async def route_poi_employment_create(
+    poi_id: int,
+    history_in: create.CreateEmploymentHistory,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint creates an employment history
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create employment history
+    history = await services.create_employment_history(
+        user=curr_user, poi=poi, data=history_in, db=db
+    )
+
+    return {"data": await format_employment_history(history=history)}
+
+
+@router.put(
+    "/employment/{history_id}/",
+    summary="Edit employment history",
+    response_description="The new details of the employment history",
+    status_code=status.HTTP_200_OK,
+    response_model=response.EmploymentHistoryResponse,
+)
+async def route_poi_employment_edit(
+    history_id: int,
+    history_in: edit.EmploymentHistoryEdit,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint edits an employment history
+    """
+
+    # Get employment history
+    history = cast(
+        models.EmploymentHistory,
+        await selectors.get_employment_history_by_id(id=history_id, db=db),
+    )
+
+    # Edit history
+    new_history = await services.edit_employment_history(
+        user=curr_user, history=history, data=history_in, db=db
+    )
+
+    return {"data": await format_employment_history(history=new_history)}
+
+
+@router.delete(
+    "/employment/{history_id}/",
+    summary="Delete employment history",
+    response_description="Employment history deleted successfully",
+    status_code=status.HTTP_200_OK,
+    response_model=response.EmploymentHistoryDeleteResponse,
+)
+async def route_poi_employment_delete(
+    history_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint deletes an employment history
+    """
+
+    # Get employment history
+    history = cast(
+        models.EmploymentHistory,
+        await selectors.get_employment_history_by_id(id=history_id, db=db),
+    )
+
+    # Delete address
+    history.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
+    history.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="employment-history",
+        action=f"delete:{history.id}",
+        db=db,
+    )
+
+    return {}
+
 
 #########################################################################
 # VETERAN STATUS

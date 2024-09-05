@@ -53,3 +53,12 @@ class KnownAssociateNotFound(NotFound):
 
     def __init__(self, *, loc: list | None = None):
         super().__init__("Known Associate Not Found", loc=loc)
+
+
+class EmploymentHistoryNotFound(NotFound):
+    """
+    Exception for 404 Employment History Not Found
+    """
+
+    def __init__(self, *, loc: list | None = None):
+        super().__init__("Employment History Not Found", loc=loc)

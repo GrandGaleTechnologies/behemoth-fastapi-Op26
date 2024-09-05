@@ -2,6 +2,7 @@ from pydantic import Field
 
 from app.common.schemas import PaginatedResponseSchema, ResponseSchema
 from app.poi.schemas.base import (
+    EmploymentHistory,
     GSMNumber,
     IDDocument,
     KnownAssociate,
@@ -130,7 +131,7 @@ class KnownAssociateResponse(ResponseSchema):
     Response schema for known associates responses
     """
 
-    msg: str = Field(default="Known associate retreive successfully")
+    msg: str = Field(default="Known associate retreived successfully")
     data: KnownAssociate = Field(description="The details of the known associate")
 
 
@@ -140,4 +141,22 @@ class KnownAssociateDeleteResponse(ResponseSchema):
     """
 
     msg: str = Field(default="Known associate deleted successfully")
+    data: None = None
+
+
+class EmploymentHistoryResponse(ResponseSchema):
+    """
+    Response schema for employment history responses
+    """
+
+    msg: str = Field(default="Employment history retreived successfully")
+    data: EmploymentHistory = Field(description="The details of the employment history")
+
+
+class EmploymentHistoryDeleteResponse(ResponseSchema):
+    """
+    Response schema for employment history delete request
+    """
+
+    msg: str = Field(default="Employment history deleted successfully")
     data: None = None

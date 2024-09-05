@@ -204,3 +204,24 @@ async def format_known_associate(associate: models.KnownAssociate):
         if bool(associate.last_seen_time)
         else None,
     }
+
+
+async def format_employment_history(history: models.EmploymentHistory):
+    """
+    Format employment history obj to dict
+    """
+    return {
+        "id": history.id,
+        "company": encrypt_man.decrypt_str(history.company),
+        "employment_type": encrypt_man.decrypt_str(history.employment_type),
+        "from_date": encrypt_man.decrypt_date(history.from_date)
+        if bool(history.from_date)
+        else None,
+        "to_date": encrypt_man.decrypt_date(history.to_date)
+        if bool(history.to_date)
+        else None,
+        "current_job": encrypt_man.decrypt_boolean(history.current_job),
+        "description": encrypt_man.decrypt_str(history.description)
+        if bool(history.description)
+        else None,
+    }
