@@ -81,11 +81,11 @@ class POISummary(BaseModel):
 
     id: int = Field(description="The ID of the poi")
     full_name: str = Field(description="The fullname of the poi")
-    convictions: list[OffenseSummary] = Field(
+    convictions: list["POIOffense"] = Field(
         description="The list of the poi's convictions"
     )
     is_pinned: bool = Field(description="If the poi is pinned")
-    created_at: date = Field(description="The date the poi was created")
+    created_at: datetime = Field(description="The date the poi was created")
 
 
 class POIBaseInformation(BaseModel):
@@ -229,7 +229,7 @@ class POIOffense(BaseModel):
     """
 
     id: int = Field(description="Unique identifier for POI offense")
-    offense_id: Offense = Field(description="Offense details")
+    offense: OffenseSummary = Field(description="Offense details")
     case_id: str | None = Field(default=None, description="Case ID")
     date_convicted: date | None = Field(default=None, description="Date of conviction")
     notes: str | None = Field(default=None, description="Additional notes")

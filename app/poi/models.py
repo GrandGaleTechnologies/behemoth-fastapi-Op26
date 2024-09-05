@@ -86,7 +86,7 @@ class POI(DBBase):
     educational_background: Mapped[list["EducationalBackground"]] = relationship(
         "EducationalBackground", backref="pois"
     )
-    offeses: Mapped[list["POIOffense"]] = relationship("POIOffense", backref="pois")
+    offenses: Mapped[list["POIOffense"]] = relationship("POIOffense", backref="pois")
     frequented_spots: Mapped[list["FrequentedSpot"]] = relationship(
         "FrequentedSpot", backref="pois"
     )
@@ -300,6 +300,7 @@ class POIOffense(DBBase):
     date_convicted = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
 
+    offense: Mapped[Offense] = relationship("Offense", backref="poi_offenses")
     is_deleted = Column(
         String, nullable=False, default=encryption_manager.encrypt_boolean(False)
     )

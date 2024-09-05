@@ -1,6 +1,6 @@
+from app.common.encryption import EncryptionManager
 from app.core.settings import get_settings
 from app.poi import models
-from app.common.encryption import EncryptionManager
 
 # Globals
 settings = get_settings()
@@ -17,6 +17,17 @@ async def format_offense(offense: models.Offense):
         "name": encrypt_man.decrypt_str(data=offense.name),
         "description": encrypt_man.decrypt_str(data=offense.description),
         "created_at": encrypt_man.decrypt_datetime(data=offense.created_at),
+    }
+
+
+async def format_offense_summary(offense: models.Offense):
+    """
+    Format offense obj to offense summary dict
+    """
+
+    return {
+        "id": offense.id,
+        "name": encrypt_man.decrypt_str(data=offense.name),
     }
 
 
@@ -76,6 +87,37 @@ async def format_poi_base(poi: models.POI):
         if poi.id_documents
         else None,
         "created_at": encrypt_man.decrypt_datetime(poi.created_at),
+    }
+
+
+async def format_poi_summary(poi: models.POI):
+    """
+    Format poi obj to poi summary
+    """
+
+    return {
+        "id": poi.id,
+        "full_name": encrypt_man.decrypt_str(poi.full_name),
+        "convictions": [await format_poi_offense(conv=conv) for conv in poi.offenses],
+        "is_pinned": encrypt_man.decrypt_boolean(poi.is_pinned),
+        "created_at": encrypt_man.decrypt_datetime(poi.created_at),
+    }
+
+
+async def format_poi_offense(conv: models.POIOffense):
+    """
+    Format poi offense to dict
+    """
+    return {
+        "id": conv.id,
+        "offense": await format_offense_summary(offense=conv.offense),
+        "case_id": encrypt_man.decrypt_str(conv.case_id)
+        if bool(conv.case_id)
+        else None,
+        "date_convicted": encrypt_man.decrypt_date(conv.date_convicted)
+        if bool(conv.date_convicted)
+        else None,
+        "notes": encrypt_man.decrypt_str(conv.notes) if bool(conv.notes) else None,
     }
 
 

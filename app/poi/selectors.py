@@ -183,11 +183,16 @@ async def get_poi_statistics(db: Session):
     )
 
     # Get poi report on convictions
-    top_convictions = []
+    top_convictions: list[dict[str, str | int]] = []
 
     top_offenses = await utils.get_top_offenses(db=db)
     for offense_name, value in top_offenses:
-        top_convictions.append({"offense_name": offense_name, "value": value})
+        top_convictions.append(
+            {
+                "offense": encryption_manager.decrypt_str(offense_name),
+                "value": value,
+            }
+        )
 
     # Get poi report on age range
     top_age_range = await utils.get_top_poi_age_ranges(
@@ -203,8 +208,54 @@ async def get_poi_statistics(db: Session):
         "tno_pois_last_month": tno_pois_last_month,
         "tno_pois_curr_month": tno_pois_curr_month,
         "poi_report_conviction": top_convictions,
-        "poi_report_age": top_age_range,
+        "poi_report_age": [
+            {"range": report[0], "value": report[1]} for report in top_age_range
+        ],
     }
+
+
+async def get_pinned_pois(db: Session):
+    """
+    Get all pinned pois
+
+    Args:
+        db (Session): The database session
+
+    Returns:
+        list[models.POI]
+    """
+    # Init crud
+    poi_crud = POICRUD(db=db)
+
+    # init qs
+    qs = cast(list[models.POI], await poi_crud.get_all())
+
+    # decrypt pin status
+    data = []
+    for obj in qs:
+        if encryption_manager.decrypt_boolean(obj.is_pinned):
+            data.append(obj)
+
+    return data
+
+
+async def get_recently_added_pois(db: Session):
+    """
+    Get recently added pois
+
+    Args:
+        db (Session): The database session
+
+    Returns:
+        list[models.POI]
+    """
+    # Init crud
+    poi_crud = POICRUD(db=db)
+
+    # init qs
+    qs = cast(Query[models.POI], await poi_crud.get_all(return_qs=True))
+
+    return qs.order_by(models.POI.id.desc()).all()
 
 
 async def get_poi_by_id(id: int, db: Session, raise_exc: bool = True):
