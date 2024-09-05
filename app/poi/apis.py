@@ -282,6 +282,33 @@ async def route_poi_id_doc_delete(
 ###################################################################
 # GSM NUMBERS
 ###################################################################
+@router.post(
+    "/{poi_id}/gsm",
+    summary="Create GSM Number",
+    response_description="The details of the created gsm number",
+    status_code=status.HTTP_201_CREATED,
+    response_model=response.GSMNumberResponse,
+    tags=[tags.POI_GSM_NUMBER],
+)
+async def route_poi_gsm_create(
+    poi_id: int,
+    gsm_in: create.CreateGSMNumber,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint creates a gsm number
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # create gsm
+    gsm = await services.create_gsm_number(user=curr_user, poi=poi, data=gsm_in, db=db)
+
+    return {"data": await format_gsm(gsm=gsm)}
+
+
 @router.put(
     "/gsm/{gsm_id}",
     summary="Edit GSM Number",
