@@ -10,6 +10,7 @@ from app.core.settings import get_settings
 from app.core.tags import get_tags
 from app.poi import models, selectors, services
 from app.poi.formatters import (
+    format_educational_background,
     format_employment_history,
     format_gsm,
     format_id_document,
@@ -658,7 +659,7 @@ async def route_poi_employment_delete(
         await selectors.get_employment_history_by_id(id=history_id, db=db),
     )
 
-    # Delete address
+    # Delete employment history
     history.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
     history.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
     db.commit()
@@ -714,6 +715,103 @@ async def route_poi_veteran_status(
 #########################################################################
 # EDUCATIONAL BACKGROUND
 #########################################################################
+@router.post(
+    "/{poi_id}/education",
+    summary="Add POI Educational Background",
+    response_description="The details of the educational background",
+    status_code=status.HTTP_201_CREATED,
+    response_model=response.EducationalBackgroundResponse,
+    tags=[tags.POI_EDUCATIONAL_BACKGROUND],
+)
+async def route_poi_education_create(
+    poi_id: int,
+    education_in: create.CreateEducationalBackground,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint creates an educational background
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create educational background
+    education = await services.create_educational_background(
+        user=curr_user, poi=poi, data=education_in, db=db
+    )
+
+    return {"data": await format_educational_background(education=education)}
+
+
+@router.put(
+    "/education/{education_id}/",
+    summary="Edit POI Educational Background",
+    response_description="The details of the educational background",
+    status_code=status.HTTP_200_OK,
+    response_model=response.EducationalBackgroundResponse,
+    tags=[tags.POI_EDUCATIONAL_BACKGROUND],
+)
+async def route_poi_education_edit(
+    education_id: int,
+    education_in: edit.EducationalBackgroundEdit,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint edits the poi's education background
+    """
+
+    # Get educational background
+    education = cast(
+        models.EducationalBackground,
+        await selectors.get_educational_background_by_id(id=education_id, db=db),
+    )
+
+    # Edit educational background
+    new_education = await services.edit_educational_background(
+        user=curr_user, education=education, data=education_in, db=db
+    )
+
+    return {"data": await format_educational_background(education=new_education)}
+
+
+@router.delete(
+    "/education/{education_id}/",
+    summary="Delete educational background",
+    response_description="Educational background deleted successfully",
+    status_code=status.HTTP_200_OK,
+    response_model=response.EducationalBackgroundDeleteResponse,
+    tags=[tags.POI_EDUCATIONAL_BACKGROUND],
+)
+async def route_poi_education_delete(
+    education_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint deletes an educational background
+    """
+
+    # Get educational background
+    education = cast(
+        models.EducationalBackground,
+        await selectors.get_educational_background_by_id(id=education_id, db=db),
+    )
+
+    # Delete educational background
+    education.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
+    education.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="educational-background",
+        action=f"delete:{education.id}",
+        db=db,
+    )
+
+    return {}
+
 
 #########################################################################
 # POI OFFENSE

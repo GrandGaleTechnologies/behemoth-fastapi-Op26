@@ -18,6 +18,7 @@ class RouteTags(BaseModel):
     POI_KNOWN_ASSOCIATE: str = "POI Known Associate Endpoints"
     POI_EMPLOYMENT_HISTORY: str = "POI Employment History Endpoints"
     POI_VETERAN_STATUS: str = "POI Veteran Status Endpoints"
+    POI_EDUCATIONAL_BACKGROUND: str = "POI Educational Background Endpoints"
 
 
 @lru_cache

@@ -124,3 +124,17 @@ class VeteranStatusEdit(BaseModel):
     from_date: date | None = Field(default=None, description="Service start date")
     to_date: date | None = Field(default=None, description="Service end date")
     notes: str | None = Field(default=None, description="Additional notes")
+
+
+class EducationalBackgroundEdit(BaseModel):
+    """
+    Edit schema for poi educational background
+    """
+
+    type: str = Field(description="Type of education")
+    institute_name: str = Field(description="Name of the institute")
+    country: str = Field(description="Country of the institute")
+    state: str = Field(description="State of the institute")
+    from_date: date | None = Field(default=None, description="Start date of education")
+    to_date: date | None = Field(default=None, description="End date of education")
+    current_institute: bool = Field(description="Is this the current institute")

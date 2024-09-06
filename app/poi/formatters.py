@@ -250,3 +250,25 @@ async def format_veteran_status(status: models.VeteranStatus):
         else None,
         "notes": encrypt_man.decrypt_str(status.notes) if bool(status.notes) else None,
     }
+
+
+async def format_educational_background(education: models.EducationalBackground):
+    """
+    Format educational background obj to dict
+    """
+    return {
+        "id": education.id,
+        "type": encrypt_man.decrypt_str(education.type),
+        "institute_name": encrypt_man.decrypt_str(education.institute_name),
+        "country": encrypt_man.decrypt_str(education.country),
+        "state": encrypt_man.decrypt_str(education.state),
+        "from_date": encrypt_man.decrypt_date(education.from_date)
+        if bool(education.from_date)
+        else None,
+        "to_date": encrypt_man.decrypt_date(education.to_date)
+        if bool(education.to_date)
+        else None,
+        "current_institute": encrypt_man.decrypt_boolean(education.current_institute)
+        if bool(education.current_institute)
+        else None,
+    }

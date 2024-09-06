@@ -62,3 +62,12 @@ class EmploymentHistoryNotFound(NotFound):
 
     def __init__(self, *, loc: list | None = None):
         super().__init__("Employment History Not Found", loc=loc)
+
+
+class EducationalBackgroundNotFound(NotFound):
+    """
+    Exception for 404 Educational Background Not Found
+    """
+
+    def __init__(self, *, loc: list | None = None):
+        super().__init__("Educational Background Not Found", loc=loc)

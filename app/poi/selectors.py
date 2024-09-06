@@ -13,6 +13,7 @@ from app.core.settings import get_settings
 from app.poi import models, utils
 from app.poi.crud import (
     POICRUD,
+    EducationalBackgroundCRUD,
     EmploymentHistoryCRUD,
     GSMNumberCRUD,
     IDDocumentCRUD,
@@ -22,6 +23,7 @@ from app.poi.crud import (
     VeteranStatusCRUD,
 )
 from app.poi.exceptions import (
+    EducationalBackgroundNotFound,
     EmploymentHistoryNotFound,
     GSMNumberNotFound,
     IDDocumentNotFound,
@@ -475,5 +477,37 @@ async def get_veteran_status_by_poi(
             f"Veteran status for poi {poi.id} not found",
             loc="app.poi.selectors.get_veteran_status_by_poi",
         )
+
+    return obj
+
+
+async def get_educational_background_by_id(
+    id: int, db: Session, raise_exc: bool = True
+):
+    """
+    Get educational background by id
+
+    Args:
+        id (int): The id of the educational background
+        db (Session): The database session
+        raise_exc (bool = True): raise a 404 if not found
+
+    Raises:
+        EducationalBackgroundNotFound
+
+    Returns:
+        models.EducationalBackground | None
+    """
+    # Init crud
+    education_crud = EducationalBackgroundCRUD(db=db)
+
+    # Get obj
+    obj = await education_crud.get(id=id)
+    if not obj and raise_exc:
+        raise EducationalBackgroundNotFound()
+
+    # Check if deleted
+    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+        raise EducationalBackgroundNotFound()
 
     return obj

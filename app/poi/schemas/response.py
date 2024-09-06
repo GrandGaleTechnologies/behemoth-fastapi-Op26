@@ -2,6 +2,7 @@ from pydantic import Field
 
 from app.common.schemas import PaginatedResponseSchema, ResponseSchema
 from app.poi.schemas.base import (
+    EducationalBackground,
     EmploymentHistory,
     GSMNumber,
     IDDocument,
@@ -170,3 +171,23 @@ class VeteranStatusResponse(ResponseSchema):
 
     msg: str = Field(default="Veteran status retreieved successfully")
     data: VeteranStatus = Field(description="The details of the poi's veteran status")
+
+
+class EducationalBackgroundResponse(ResponseSchema):
+    """
+    Response schema for educational background responses
+    """
+
+    msg: str = Field(default="Educational background retreived successfully")
+    data: EducationalBackground = Field(
+        description="The details of the educational background"
+    )
+
+
+class EducationalBackgroundDeleteResponse(ResponseSchema):
+    """
+    Response schema for educational background delete request
+    """
+
+    msg: str = Field(default="Educational background deleted successfully")
+    data: None = None

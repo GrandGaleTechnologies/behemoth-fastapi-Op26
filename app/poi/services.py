@@ -1032,6 +1032,18 @@ async def create_educational_background(
     data: create.CreateEducationalBackground,
     db: Session,
 ):
+    """
+    Create educational background
+
+    Args:
+        user (user_models.User): The user obj
+        poi (models.POI): The poi obj
+        data (create.CreateEducationalBackground): The details of the educational background
+        db (Session): The database session
+
+    Returns:
+        models.EducationalBackground
+    """
     # Init crud
     background_crud = EducationalBackgroundCRUD(db=db)
 
@@ -1063,6 +1075,58 @@ async def create_educational_background(
     return obj
 
 
+async def edit_educational_background(
+    user: user_models.User,
+    education: models.EducationalBackground,
+    data: edit.EducationalBackgroundEdit,
+    db: Session,
+):
+    """
+    Edit educational background
+
+    Args:
+        user (user_models.User): The user obj
+        education (models.EducationalBackground): The educational background obj
+        data (edit.EducationalBackgroundEdit): The details of the educational background
+        db (Session): The database session
+
+    Returns:
+        models.EducationalBackground
+    """
+    changelog = ""
+
+    education_dict = education.__dict__
+    for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
+        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
+        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+
+        if education_dict[field] and dec(education_dict[field]) != value:
+            changelog += f"- {dec(education_dict[field])} -> {value}\n"
+
+            setattr(education, field, enc(value))
+        elif not education_dict[field] and value:
+            changelog += f"- {education_dict[field]} -> {value}\n"
+
+            setattr(education, field, enc(value))
+
+    # Save changes
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="educational-background",
+        action=f"edit:{education.id}",
+        notes=changelog,
+        db=db,
+    )
+
+    return education
+
+
+##############################################################################
+# POI OFFENSE
+##############################################################################
 async def create_poi_offense(
     user: user_models.User,
     poi: models.POI,
