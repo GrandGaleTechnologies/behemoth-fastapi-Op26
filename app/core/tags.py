@@ -14,6 +14,10 @@ class RouteTags(BaseModel):
     POI_OTHER_PROFILE: str = "POI Other Profile Endpoints"
     POI_ID_DOCUMENT: str = "POI ID Document Endpoints"
     POI_GSM_NUMBER: str = "POI GSM Number Endpoints"
+    POI_RESIDENTIAL_ADDRESS: str = "POI Residential Address Endpoints"
+    POI_KNOWN_ASSOCIATE: str = "POI Known Associate Endpoints"
+    POI_EMPLOYMENT_HISTORY: str = "POI Employment History Endpoints"
+    POI_VETERAN_STATUS: str = "POI Veteran Status Endpoints"
 
 
 @lru_cache

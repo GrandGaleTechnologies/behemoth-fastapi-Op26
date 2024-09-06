@@ -974,6 +974,58 @@ async def create_veteran_status(
     return obj
 
 
+async def edit_veteran_status(
+    user: user_models.User,
+    status: models.VeteranStatus,
+    data: edit.VeteranStatusEdit,
+    db: Session,
+):
+    """
+    Edit veteran status
+
+    Args:
+        user (user_models.User): The user obj
+        status (models.VeteranStatus): The poi obj
+        data (edit.VeteranStatusEdit): The details of the veteran status
+        db (Session): The database session
+
+    Returns:
+        models.VeteranStatus
+    """
+    changelog = ""
+
+    status_dict = status.__dict__
+    for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
+        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
+        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+
+        if status_dict[field] and dec(status_dict[field]) != value:
+            changelog += f"- {dec(status_dict[field])} -> {value}\n"
+
+            setattr(status, field, enc(value))
+        elif not status_dict[field] and value:
+            changelog += f"- {status_dict[field]} -> {value}\n"
+
+            setattr(status, field, enc(value))
+
+    # Save changes
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="veteran-status",
+        action=f"edit:{status.id}",
+        notes=changelog,
+        db=db,
+    )
+
+    return status
+
+
+#############################################################################
+# EDUCATIONAL BACKGROUND
+#############################################################################
 async def create_educational_background(
     user: user_models.User,
     poi: models.POI,

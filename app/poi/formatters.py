@@ -225,3 +225,28 @@ async def format_employment_history(history: models.EmploymentHistory):
         if bool(history.description)
         else None,
     }
+
+
+async def format_veteran_status(status: models.VeteranStatus):
+    """
+    Format veteran status obj to dict
+    """
+    return {
+        "id": status.id,
+        "is_veteran": encrypt_man.decrypt_boolean(status.is_veteran),
+        "section": encrypt_man.decrypt_str(status.section),
+        "location": encrypt_man.decrypt_str(status.location),
+        "id_card": encrypt_man.decrypt_str(status.id_card)
+        if bool(status.id_card)
+        else None,
+        "id_card_issuer": encrypt_man.decrypt_str(status.id_card_issuer)
+        if bool(status.id_card_issuer)
+        else None,
+        "from_date": encrypt_man.decrypt_date(status.from_date)
+        if bool(status.from_date)
+        else None,
+        "to_date": encrypt_man.decrypt_date(status.to_date)
+        if bool(status.to_date)
+        else None,
+        "notes": encrypt_man.decrypt_str(status.notes) if bool(status.notes) else None,
+    }

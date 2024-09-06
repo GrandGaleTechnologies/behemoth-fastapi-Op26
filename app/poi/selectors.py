@@ -5,6 +5,7 @@ from typing import cast
 from sqlalchemy.orm import Query, Session
 
 from app.common.encryption import EncryptionManager
+from app.common.exceptions import InternalServerError
 from app.common.paginators import paginate
 from app.common.types import PaginationParamsType
 from app.common.utils import find_all_matches, get_last_day_of_month, paginate_list
@@ -18,6 +19,7 @@ from app.poi.crud import (
     KnownAssociateCRUD,
     OffenseCRUD,
     ResidentialAddressCRUD,
+    VeteranStatusCRUD,
 )
 from app.poi.exceptions import (
     EmploymentHistoryNotFound,
@@ -442,5 +444,36 @@ async def get_employment_history_by_id(id: int, db: Session, raise_exc: bool = T
     # Check if deleted
     if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
         raise EmploymentHistoryNotFound()
+
+    return obj
+
+
+async def get_veteran_status_by_poi(
+    poi: models.POI, db: Session, raise_exc: bool = True
+):
+    """
+    Get veteran status by poi
+
+    Args:
+        poi (models.POI): The poi obj
+        db (Session): The database session
+        raise_exc (bool = True): raise a 404 if not found
+
+    Raises:
+        InternalServerError
+
+    Returns:
+        models.VeteranStatus
+    """
+    # Init crud
+    veteran_crud = VeteranStatusCRUD(db=db)
+
+    # Get obj
+    obj = await veteran_crud.get(poi_id=poi.id)
+    if not obj and raise_exc:
+        raise InternalServerError(
+            f"Veteran status for poi {poi.id} not found",
+            loc="app.poi.selectors.get_veteran_status_by_poi",
+        )
 
     return obj

@@ -109,3 +109,18 @@ class EmploymentHistoryEdit(BaseModel):
     to_date: date | None = Field(default=None, description="Employment end date")
     current_job: bool = Field(description="Is this the current job")
     description: str | None = Field(default=None, description="Job description")
+
+
+class VeteranStatusEdit(BaseModel):
+    """
+    Create schema for poi veteran status
+    """
+
+    is_veteran: bool = Field(description="Is the POI a veteran")
+    section: str = Field(description="Section or unit")
+    location: str = Field(description="Location of service")
+    id_card: str | None = Field(default=None, description="ID card")
+    id_card_issuer: str | None = Field(default=None, description="ID card issuer")
+    from_date: date | None = Field(default=None, description="Service start date")
+    to_date: date | None = Field(default=None, description="Service end date")
+    notes: str | None = Field(default=None, description="Additional notes")

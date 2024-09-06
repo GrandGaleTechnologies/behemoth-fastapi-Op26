@@ -11,6 +11,7 @@ from app.poi.schemas.base import (
     POIBaseInformation,
     POIOtherInformation,
     ResidentialAddress,
+    VeteranStatus,
 )
 
 
@@ -160,3 +161,12 @@ class EmploymentHistoryDeleteResponse(ResponseSchema):
 
     msg: str = Field(default="Employment history deleted successfully")
     data: None = None
+
+
+class VeteranStatusResponse(ResponseSchema):
+    """
+    Response schema for poi veteran status
+    """
+
+    msg: str = Field(default="Veteran status retreieved successfully")
+    data: VeteranStatus = Field(description="The details of the poi's veteran status")

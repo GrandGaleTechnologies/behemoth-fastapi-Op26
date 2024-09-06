@@ -17,6 +17,7 @@ from app.poi.formatters import (
     format_poi_application,
     format_poi_base,
     format_residential_address,
+    format_veteran_status,
 )
 from app.poi.routes.offense import router as poi_offense_router
 from app.poi.schemas import create, edit, response
@@ -382,6 +383,7 @@ async def route_poi_gsm_delete(
     response_description="The details of the residential address",
     status_code=status.HTTP_201_CREATED,
     response_model=response.ResidentialAddressResponse,
+    tags=[tags.POI_RESIDENTIAL_ADDRESS],
 )
 async def route_poi_address_create(
     poi_id: int,
@@ -410,6 +412,7 @@ async def route_poi_address_create(
     response_description="The new details of the residential address",
     status_code=status.HTTP_200_OK,
     response_model=response.ResidentialAddressResponse,
+    tags=[tags.POI_RESIDENTIAL_ADDRESS],
 )
 async def route_poi_address_edit(
     address_id: int,
@@ -438,6 +441,7 @@ async def route_poi_address_edit(
     response_description="Residential Address Deleted Successfully",
     status_code=status.HTTP_200_OK,
     response_model=response.ResidentialAddressDeleteResponse,
+    tags=[tags.POI_RESIDENTIAL_ADDRESS],
 )
 async def route_poi_address_delete(
     address_id: int, curr_user: CurrentUser, db: DatabaseSession
@@ -477,6 +481,7 @@ async def route_poi_address_delete(
     response_description="The details of the poi's known associate",
     status_code=status.HTTP_201_CREATED,
     response_model=response.KnownAssociateResponse,
+    tags=[tags.POI_KNOWN_ASSOCIATE],
 )
 async def route_poi_associate_create(
     poi_id: int,
@@ -505,6 +510,7 @@ async def route_poi_associate_create(
     response_description="The new details of the known associate",
     status_code=status.HTTP_200_OK,
     response_model=response.KnownAssociateResponse,
+    tags=[tags.POI_KNOWN_ASSOCIATE],
 )
 async def route_poi_associate_edit(
     associate_id: int,
@@ -536,6 +542,7 @@ async def route_poi_associate_edit(
     response_description="Known associate deleted successfully",
     status_code=status.HTTP_200_OK,
     response_model=response.KnownAssociateDeleteResponse,
+    tags=[tags.POI_KNOWN_ASSOCIATE],
 )
 async def route_poi_assicate_delete(
     associate_id: int, curr_user: CurrentUser, db: DatabaseSession
@@ -575,6 +582,7 @@ async def route_poi_assicate_delete(
     response_description="The details of the employment history",
     status_code=status.HTTP_201_CREATED,
     response_model=response.EmploymentHistoryResponse,
+    tags=[tags.POI_EMPLOYMENT_HISTORY],
 )
 async def route_poi_employment_create(
     poi_id: int,
@@ -603,6 +611,7 @@ async def route_poi_employment_create(
     response_description="The new details of the employment history",
     status_code=status.HTTP_200_OK,
     response_model=response.EmploymentHistoryResponse,
+    tags=[tags.POI_EMPLOYMENT_HISTORY],
 )
 async def route_poi_employment_edit(
     history_id: int,
@@ -634,6 +643,7 @@ async def route_poi_employment_edit(
     response_description="Employment history deleted successfully",
     status_code=status.HTTP_200_OK,
     response_model=response.EmploymentHistoryDeleteResponse,
+    tags=[tags.POI_EMPLOYMENT_HISTORY],
 )
 async def route_poi_employment_delete(
     history_id: int, curr_user: CurrentUser, db: DatabaseSession
@@ -667,6 +677,39 @@ async def route_poi_employment_delete(
 #########################################################################
 # VETERAN STATUS
 #########################################################################
+@router.put(
+    "/{poi_id}/vetstatus",
+    summary="Edit POI Veteran Status",
+    response_description="The POI's veteran status details",
+    status_code=status.HTTP_200_OK,
+    response_model=response.VeteranStatusResponse,
+    tags=[tags.POI_VETERAN_STATUS],
+)
+async def route_poi_veteran_status(
+    poi_id: int,
+    status_in: edit.VeteranStatusEdit,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint edits a poi's veteran status
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Get veteran status
+    vet_status = cast(
+        models.VeteranStatus, await selectors.get_veteran_status_by_poi(poi=poi, db=db)
+    )
+
+    # Edit veteran status
+    new_vet_status = await services.edit_veteran_status(
+        user=curr_user, status=vet_status, data=status_in, db=db
+    )
+
+    return {"data": await format_veteran_status(status=new_vet_status)}
+
 
 #########################################################################
 # EDUCATIONAL BACKGROUND
