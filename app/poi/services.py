@@ -1278,3 +1278,52 @@ async def create_frequented_spot(
     )
 
     return obj
+
+
+async def edit_frequented_spot(
+    user: user_models.User,
+    spot: models.FrequentedSpot,
+    data: edit.FrequentedSpotEdit,
+    db: Session,
+):
+    """
+    Edit frequented spot
+
+    Args:
+        user (user_models.User): The user obj
+        spot (models.FrequentedSpot): The frequented spot obj
+        data (edit.FrequentedSpotEdit): The details of the frequented spot
+        db (Session): The database session
+
+    Returns:
+        models.FrequentedSpot
+    """
+    changelog = ""
+
+    spot_dict = spot.__dict__
+    for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
+        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
+        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+
+        if spot_dict[field] and dec(spot_dict[field]) != value:
+            changelog += f"- {dec(spot_dict[field])} -> {value}\n"
+
+            setattr(spot, field, enc(value))
+        elif not spot_dict[field] and value:
+            changelog += f"- {spot_dict[field]} -> {value}\n"
+
+            setattr(spot, field, enc(value))
+
+    # Save changes
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="frequented-spot",
+        action=f"edit:{spot.id}",
+        notes=changelog,
+        db=db,
+    )
+
+    return spot

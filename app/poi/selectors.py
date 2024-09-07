@@ -15,6 +15,7 @@ from app.poi.crud import (
     POICRUD,
     EducationalBackgroundCRUD,
     EmploymentHistoryCRUD,
+    FrequentedSpotCRUD,
     GSMNumberCRUD,
     IDDocumentCRUD,
     KnownAssociateCRUD,
@@ -26,6 +27,7 @@ from app.poi.crud import (
 from app.poi.exceptions import (
     EducationalBackgroundNotFound,
     EmploymentHistoryNotFound,
+    FrequentedSpotNotFound,
     GSMNumberNotFound,
     IDDocumentNotFound,
     KnownAssociateNotFound,
@@ -541,5 +543,35 @@ async def get_educational_background_by_id(
     # Check if deleted
     if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
         raise EducationalBackgroundNotFound()
+
+    return obj
+
+
+async def get_frequented_spot_by_id(id: int, db: Session, raise_exc: bool = True):
+    """
+    Get frequented spot by id
+
+    Args:
+        id (int): The ID of the frequented spot
+        db (Session): The database session
+        raise_exc (bool = True): raise a 404 if not found
+
+    Raises:
+        FrequentedSpotNotFound
+
+    Returns:
+        models.FrequentedSpot | None
+    """
+    # Init crud
+    spot_crud = FrequentedSpotCRUD(db=db)
+
+    # Get obj
+    obj = await spot_crud.get(id=id)
+    if not obj and raise_exc:
+        raise FrequentedSpotNotFound()
+
+    # Check if deleted
+    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+        raise FrequentedSpotNotFound()
 
     return obj

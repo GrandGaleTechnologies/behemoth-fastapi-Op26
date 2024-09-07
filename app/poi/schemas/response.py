@@ -4,6 +4,7 @@ from app.common.schemas import PaginatedResponseSchema, ResponseSchema
 from app.poi.schemas.base import (
     EducationalBackground,
     EmploymentHistory,
+    FrequentedSpot,
     GSMNumber,
     IDDocument,
     KnownAssociate,
@@ -209,4 +210,22 @@ class POIOffenseDeleteResponse(ResponseSchema):
     """
 
     msg: str = Field(default="POI offense deleted successfully")
+    data: None = None
+
+
+class FrequentedSpotResponse(ResponseSchema):
+    """
+    Response schema for poi frequented spot responses
+    """
+
+    msg: str = Field(default="Frequented spot retreived successfully")
+    data: FrequentedSpot = Field(description="The details of the frequented spot")
+
+
+class FrequentedSpotDeleteResponse(ResponseSchema):
+    """
+    Response schema for frequented spot delete request
+    """
+
+    msg: str = Field(default="Frequented spot deleted successfully")
     data: None = None

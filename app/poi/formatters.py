@@ -272,3 +272,23 @@ async def format_educational_background(education: models.EducationalBackground)
         if bool(education.current_institute)
         else None,
     }
+
+
+async def format_frequented_spot(spot: models.FrequentedSpot):
+    """
+    Format frequented spot obj to dict
+    """
+    return {
+        "id": spot.id,
+        "country": encrypt_man.decrypt_str(spot.country),
+        "state": encrypt_man.decrypt_str(spot.state),
+        "lga": encrypt_man.decrypt_str(spot.lga),
+        "address": encrypt_man.decrypt_str(spot.address),
+        "from_date": encrypt_man.decrypt_date(spot.from_date)
+        if bool(spot.from_date)
+        else None,
+        "to_date": encrypt_man.decrypt_date(spot.to_date)
+        if bool(spot.to_date)
+        else None,
+        "notes": encrypt_man.decrypt_str(spot.notes) if bool(spot.notes) else None,
+    }

@@ -12,6 +12,7 @@ from app.poi import models, selectors, services
 from app.poi.formatters import (
     format_educational_background,
     format_employment_history,
+    format_frequented_spot,
     format_gsm,
     format_id_document,
     format_known_associate,
@@ -924,3 +925,99 @@ async def route_poi_offense_delete(
 #########################################################################
 # FREQUENTED SPOTS
 #########################################################################
+@router.post(
+    "/{poi_id}/spot",
+    summary="Add POI Frequented Spot",
+    response_description="The details of the poi's frequented spot",
+    status_code=status.HTTP_201_CREATED,
+    response_model=response.FrequentedSpotResponse,
+    tags=[tags.POI_FREQUENTED_SPOT],
+)
+async def route_poi_spot_create(
+    poi_id: int,
+    spot_in: create.CreateFrequentedSpot,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint creates a poi frequented spot
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create spot
+    spot = await services.create_frequented_spot(
+        user=curr_user, poi=poi, data=spot_in, db=db
+    )
+
+    return {"data": await format_frequented_spot(spot=spot)}
+
+
+@router.put(
+    "/spot/{spot_id}/",
+    summary="Edit Frequented Spot",
+    response_description="The new details of the frequented spot",
+    status_code=status.HTTP_200_OK,
+    response_model=response.FrequentedSpotResponse,
+    tags=[tags.POI_FREQUENTED_SPOT],
+)
+async def route_poi_spot_edit(
+    spot_id: int,
+    spot_in: edit.FrequentedSpotEdit,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint edits a frequented spot
+    """
+
+    # Get frequented spot
+    spot = cast(
+        models.FrequentedSpot,
+        await selectors.get_frequented_spot_by_id(id=spot_id, db=db),
+    )
+
+    # Edit frequented spot
+    new_spot = await services.edit_frequented_spot(
+        user=curr_user, spot=spot, data=spot_in, db=db
+    )
+
+    return {"data": await format_frequented_spot(spot=new_spot)}
+
+
+@router.delete(
+    "/spot/{spot_id}/",
+    summary="Delete Frequented Spot",
+    response_description="Frequented spot deleted successfully",
+    status_code=status.HTTP_200_OK,
+    response_model=response.FrequentedSpotDeleteResponse,
+    tags=[tags.POI_FREQUENTED_SPOT],
+)
+async def route_poi_spot_delete(
+    spot_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint deletes a frequented spot
+    """
+
+    # Get frequented spot
+    spot = cast(
+        models.FrequentedSpot,
+        await selectors.get_frequented_spot_by_id(id=spot_id, db=db),
+    )
+
+    # Delete frequented spot
+    spot.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
+    spot.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="frequented-spot",
+        action=f"delete:{spot.id}",
+        db=db,
+    )
+
+    return {}

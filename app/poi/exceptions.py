@@ -80,3 +80,12 @@ class EducationalBackgroundNotFound(NotFound):
 
     def __init__(self, *, loc: list | None = None):
         super().__init__("Educational Background Not Found", loc=loc)
+
+
+class FrequentedSpotNotFound(NotFound):
+    """
+    Exception for 404 Frequented Spot Not Found
+    """
+
+    def __init__(self, *, loc: list | None = None):
+        super().__init__("Frequented Spot Not Found", loc=loc)

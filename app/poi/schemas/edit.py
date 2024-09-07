@@ -150,3 +150,21 @@ class POIOffenseEdit(BaseModel):
         default=None, description="The date the poi was convicted"
     )
     notes: str | None = Field(default=None, description="Notes on the conviction")
+
+
+class FrequentedSpotEdit(BaseModel):
+    """
+    Edit schema for poi frequented spots
+    """
+
+    country: str = Field(description="Country of the spot")
+    state: str = Field(description="State of the spot")
+    lga: str = Field(description="Local Government Area (LGA) of the spot")
+    address: str = Field(description="Address of the spot")
+    from_date: date | None = Field(
+        default=None, description="Start date of frequenting this spot"
+    )
+    to_date: date | None = Field(
+        default=None, description="End date of frequenting this spot"
+    )
+    notes: str | None = Field(None, description="Additional notes")
