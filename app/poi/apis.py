@@ -147,55 +147,6 @@ async def route_poi_base_info(poi_id: int, curr_user: CurrentUser, db: DatabaseS
     return {"data": await format_poi_base(poi=poi)}
 
 
-#################################################################
-# Other profile
-#################################################################
-# @router.post(
-#     "/{poi_id}/other",
-#     summary="Get POI other profile",
-#     response_description="The POIs other profile",
-#     status_code=status.HTTP_200_OK,
-#     response_model=response.POIOtherInformationResponse,
-#     tags=[tags.POI_OTHER_PROFILE],
-# )
-# async def route_poi_other_create(
-#     poi_id: int,
-#     data_in: create.POIOtherProfileCreate,
-#     curr_user: CurrentUser,
-#     db: DatabaseSession,
-# ):
-#     """
-#     This endpoint adds the poi's other profile information
-#     """
-
-#     # Get poi
-#     poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
-
-#     # Create gsm numbers
-#     if data_in.gsm_numbers:
-#         for gsm in data_in.gsm_numbers:
-#             await services.create_gsm_number(user=curr_user, poi=poi, data=gsm, db=db)
-
-#     # Create residential addresses
-#     if data_in.residential_addresses:
-#         for address in data_in.residential_addresses:
-#             await services.create_residential_address(
-#                 user=curr_user, poi=poi, data=address, db=db
-#             )
-
-#     # Create known associates
-#     if data_in.known_associates:
-#         for associate in data_in.known_associates:
-#             await services.create_known_associates(
-#                 user=curr_user, poi=poi, data=associate, db=db
-#             )
-
-#     # Refresh poi
-#     db.refresh(poi)
-
-#     return {"data": await format_poi_other_profile(poi=poi)}
-
-
 ######################################################################
 # ID Document
 ######################################################################
@@ -224,6 +175,40 @@ async def route_poi_id_doc_create(
     doc = await services.create_id_doc(user=curr_user, poi=poi, data=doc_in, db=db)
 
     return {"data": await format_id_document(doc=doc)}
+
+
+@router.get(
+    "/{poi_id}/id-doc",
+    summary="Get POI ID Documents",
+    response_description="The list of the poi's id documents",
+    status_code=status.HTTP_200_OK,
+    response_model=response.IDDocumentListResponse,
+    tags=[tags.POI_ID_DOCUMENT],
+)
+async def route_poi_id_doc_list(
+    poi_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint returns the list of the poi's id documents
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="id-doc",
+        action=f"get-list:{poi.id}",
+        db=db,
+    )
+
+    return {
+        "data": [
+            await format_id_document(doc=doc)
+            for doc in await selectors.get_id_documents(poi=poi, db=db)
+        ]
+    }
 
 
 @router.put(
@@ -314,6 +299,38 @@ async def route_poi_gsm_create(
     gsm = await services.create_gsm_number(user=curr_user, poi=poi, data=gsm_in, db=db)
 
     return {"data": await format_gsm(gsm=gsm)}
+
+
+@router.get(
+    "/{poi_id}/gsm",
+    summary="Get POI ID GSM Numbers",
+    response_description="The list of the poi's gsm numbers",
+    status_code=status.HTTP_200_OK,
+    response_model=response.GSMNumberListResponse,
+    tags=[tags.POI_GSM_NUMBER],
+)
+async def route_poi_gsm_list(poi_id: int, curr_user: CurrentUser, db: DatabaseSession):
+    """
+    This endpoint returns the list of the poi's gsm numbers
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="gsm-numbers",
+        action=f"get-list:{poi.id}",
+        db=db,
+    )
+
+    return {
+        "data": [
+            await format_gsm(gsm=gsm)
+            for gsm in await selectors.get_gsm_numbers(poi=poi, db=db)
+        ]
+    }
 
 
 @router.put(
@@ -407,6 +424,40 @@ async def route_poi_address_create(
     )
 
     return {"data": await format_residential_address(address=address)}
+
+
+@router.get(
+    "/{poi_id}/address",
+    summary="Get POI Residential addresses",
+    response_description="The poi's residential addresses",
+    status_code=status.HTTP_200_OK,
+    response_model=response.ResidentialAddressListResponse,
+    tags=[tags.POI_RESIDENTIAL_ADDRESS],
+)
+async def route_poi_address_list(
+    poi_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint returns the list of the poi's addresses
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="residential-address",
+        action=f"get-list:{poi.id}",
+        db=db,
+    )
+
+    return {
+        "data": [
+            await format_residential_address(address=address)
+            for address in await selectors.get_residential_addresses(poi=poi, db=db)
+        ]
+    }
 
 
 @router.put(
@@ -505,6 +556,40 @@ async def route_poi_associate_create(
     )
 
     return {"data": await format_known_associate(associate=associate)}
+
+
+@router.get(
+    "/{poi_id}/associate",
+    summary="Get POI known associates",
+    response_description="The list of poi known associates",
+    status_code=status.HTTP_200_OK,
+    response_model=response.KnownAssociateListResponse,
+    tags=[tags.POI_KNOWN_ASSOCIATE],
+)
+async def route_poi_associate_list(
+    poi_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint returns the list of the poi's known associates
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="known-associate",
+        action=f"get-list:{poi.id}",
+        db=db,
+    )
+
+    return {
+        "data": [
+            await format_known_associate(associate=associate)
+            for associate in await selectors.get_known_associates(poi=poi, db=db)
+        ]
+    }
 
 
 @router.put(
@@ -608,6 +693,40 @@ async def route_poi_employment_create(
     return {"data": await format_employment_history(history=history)}
 
 
+@router.get(
+    "/{poi_id}/employment",
+    summary="Get POI employment history",
+    response_description="The list of the poi's employment history",
+    status_code=status.HTTP_200_OK,
+    response_model=response.EmploymentHistoryListResponse,
+    tags=[tags.POI_EMPLOYMENT_HISTORY],
+)
+async def route_poi_employment_list(
+    poi_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint returns the list of the poi's employment history
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="employment-history",
+        action=f"get-list:{poi.id}",
+        db=db,
+    )
+
+    return {
+        "data": [
+            await format_employment_history(history=history)
+            for history in await selectors.get_employment_history(poi=poi, db=db)
+        ]
+    }
+
+
 @router.put(
     "/employment/{history_id}/",
     summary="Edit employment history",
@@ -680,6 +799,39 @@ async def route_poi_employment_delete(
 #########################################################################
 # VETERAN STATUS
 #########################################################################
+@router.get(
+    "/{poi_id}/vetstatus",
+    summary="Get POI Veteran Status",
+    response_description="The poi's veteran status",
+    status_code=status.HTTP_200_OK,
+    response_model=response.VeteranStatusResponse,
+    tags=[tags.POI_VETERAN_STATUS],
+)
+async def route_poi_veteran_status_get(
+    poi_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint the poi's veteran status
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="veteran-status",
+        action=f"get-list:{poi.id}",
+        db=db,
+    )
+
+    return {
+        "data": await format_veteran_status(
+            status=await selectors.get_veteran_status_by_poi(poi=poi, db=db)
+        )
+    }
+
+
 @router.put(
     "/{poi_id}/vetstatus",
     summary="Edit POI Veteran Status",
@@ -688,7 +840,7 @@ async def route_poi_employment_delete(
     response_model=response.VeteranStatusResponse,
     tags=[tags.POI_VETERAN_STATUS],
 )
-async def route_poi_veteran_status(
+async def route_poi_veteran_status_edit(
     poi_id: int,
     status_in: edit.VeteranStatusEdit,
     curr_user: CurrentUser,
@@ -744,6 +896,40 @@ async def route_poi_education_create(
     )
 
     return {"data": await format_educational_background(education=education)}
+
+
+@router.get(
+    "/{poi_id}/education",
+    summary="Get POI Educational Background",
+    response_description="The list of the poi's educational background",
+    status_code=status.HTTP_200_OK,
+    response_model=response.EducationalBackgroundListResponse,
+    tags=[tags.POI_EDUCATIONAL_BACKGROUND],
+)
+async def route_poi_education_list(
+    poi_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint returns the poi's educational background
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="educational-background",
+        action=f"get-list:{poi.id}",
+        db=db,
+    )
+
+    return {
+        "data": [
+            await format_educational_background(education=education)
+            for education in await selectors.get_educational_background(poi=poi, db=db)
+        ]
+    }
 
 
 @router.put(
@@ -819,14 +1005,14 @@ async def route_poi_education_delete(
 # POI OFFENSE
 #########################################################################
 @router.post(
-    "/{poi_id}/convict",
+    "/{poi_id}/conviction",
     summary="Add POI Offense",
     response_description="The details of the poi offense",
     status_code=status.HTTP_201_CREATED,
     response_model=response.POIOffenseResponse,
     tags=[tags.POI_CONVICTION],
 )
-async def route_poi_offense_create(
+async def route_poi_conviction_create(
     poi_id: int,
     offense_in: create.POIOffenseCreate,
     curr_user: CurrentUser,
@@ -853,6 +1039,40 @@ async def route_poi_offense_create(
     return {"data": await format_poi_offense(conv=poi_offense)}
 
 
+@router.get(
+    "/{poi_id}/conviction",
+    summary="Get POI Offenses",
+    response_description="The list of the poi's offenses",
+    status_code=status.HTTP_200_OK,
+    response_model=response.POIOffenseListResponse,
+    tags=[tags.POI_CONVICTION],
+)
+async def route_poi_conviction_list(
+    poi_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint returns the list of the poi's offenses
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="poi-offense",
+        action=f"get-list:{poi.id}",
+        db=db,
+    )
+
+    return {
+        "data": [
+            await format_poi_offense(conv=conv)
+            for conv in await selectors.get_poi_offenses(poi=poi, db=db)
+        ]
+    }
+
+
 @router.put(
     "/conviction/{poi_offense_id}/",
     summary="Edit POI Offense",
@@ -861,7 +1081,7 @@ async def route_poi_offense_create(
     response_model=response.POIOffenseResponse,
     tags=[tags.POI_CONVICTION],
 )
-async def route_poi_offense_edit(
+async def route_poi_conviction_edit(
     poi_offense_id: int,
     offense_in: edit.POIOffenseEdit,
     curr_user: CurrentUser,
@@ -893,7 +1113,7 @@ async def route_poi_offense_edit(
     response_model=response.POIOffenseDeleteResponse,
     tags=[tags.POI_CONVICTION],
 )
-async def route_poi_offense_delete(
+async def route_poi_conviction_delete(
     poi_offense_id: int, curr_user: CurrentUser, db: DatabaseSession
 ):
     """
@@ -952,6 +1172,38 @@ async def route_poi_spot_create(
     )
 
     return {"data": await format_frequented_spot(spot=spot)}
+
+
+@router.get(
+    "/{poi_id}/spot",
+    summary="Get POI Frequented Spots",
+    response_description="The list of the poi's frequented spots",
+    status_code=status.HTTP_200_OK,
+    response_model=response.FrequentedSpotListResponse,
+    tags=[tags.POI_FREQUENTED_SPOT],
+)
+async def route_poi_spot_list(poi_id: int, curr_user: CurrentUser, db: DatabaseSession):
+    """
+    This endpoint returns the poi's frequented spots
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="frequented-spot",
+        action=f"get-list:{poi.id}",
+        db=db,
+    )
+
+    return {
+        "data": [
+            await format_frequented_spot(spot=spot)
+            for spot in await selectors.get_frequented_spots(poi=poi, db=db)
+        ]
+    }
 
 
 @router.put(

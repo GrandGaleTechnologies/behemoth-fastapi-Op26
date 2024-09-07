@@ -337,6 +337,30 @@ async def get_poi_offense_by_id(id: int, db: Session, raise_exc: bool = True):
     return obj
 
 
+async def get_poi_offenses(poi: models.POI, db: Session):
+    """
+    Get POI Offenses
+
+    Args:
+        poi (models.POI): The poi obj
+        db (Session): The database session
+
+    Returns:
+        list[models.POIOffense]
+    """
+    # Init crud
+    poi_offense_crud = POIOffenseCRUD(db=db)
+
+    qs = cast(list[models.POIOffense], await poi_offense_crud.get_all())
+
+    return [
+        obj
+        for obj in qs
+        if not encryption_manager.decrypt_boolean(obj.is_deleted)
+        and bool(obj.poi_id == poi.id)
+    ]
+
+
 async def get_id_doc_by_id(id: int, db: Session, raise_exc: bool = True):
     """
     Get ID Document using its iD
@@ -362,6 +386,30 @@ async def get_id_doc_by_id(id: int, db: Session, raise_exc: bool = True):
         raise IDDocumentNotFound()
 
     return obj
+
+
+async def get_id_documents(poi: models.POI, db: Session):
+    """
+    Get POI ID Documents
+
+    Args:
+        poi (mdoels.POI): The poi obj
+        db (Session): The database session
+
+    Returns:
+        list[models.IDDocument]
+    """
+    # Init crud
+    doc_crud = IDDocumentCRUD(db=db)
+
+    qs = cast(list[models.IDDocument], await doc_crud.get_all())
+
+    return [
+        obj
+        for obj in qs
+        if not encryption_manager.decrypt_boolean(obj.is_deleted)
+        and bool(obj.poi_id == poi.id)
+    ]
 
 
 async def get_gsm_by_id(id: int, db: Session, raise_exc: bool = True):
@@ -394,6 +442,30 @@ async def get_gsm_by_id(id: int, db: Session, raise_exc: bool = True):
     return obj
 
 
+async def get_gsm_numbers(poi: models.POI, db: Session):
+    """
+    Get gsm numbers
+
+    Args:
+        poi (models.POI): The poi obj
+        db (Session): The database session
+
+    Returns:
+        list[models.GSMNumber]
+    """
+    # Init crud
+    gsm_crud = GSMNumberCRUD(db=db)
+
+    qs = cast(list[models.GSMNumber], await gsm_crud.get_all())
+
+    return [
+        obj
+        for obj in qs
+        if not encryption_manager.decrypt_boolean(obj.is_deleted)
+        and bool(obj.poi_id == poi.id)
+    ]
+
+
 async def get_residential_address_by_id(id: int, db: Session, raise_exc: bool = True):
     """
     Get residential address using its ID
@@ -422,6 +494,30 @@ async def get_residential_address_by_id(id: int, db: Session, raise_exc: bool = 
         raise ResidentialAddressNotFound()
 
     return obj
+
+
+async def get_residential_addresses(poi: models.POI, db: Session):
+    """
+    Get poi residential addresses
+
+    Args:
+        poi (models.POI): The poi obj
+        db (Session): The database session
+
+    Returns:
+        list[models.ResidentialAddress]
+    """
+    # Init crud
+    address_crud = ResidentialAddressCRUD(db=db)
+
+    qs = cast(list[models.ResidentialAddress], await address_crud.get_all())
+
+    return [
+        obj
+        for obj in qs
+        if not encryption_manager.decrypt_boolean(obj.is_deleted)
+        and bool(obj.poi_id == poi.id)
+    ]
 
 
 async def get_known_associate_by_id(id: int, db: Session, raise_exc: bool = True):
@@ -454,6 +550,30 @@ async def get_known_associate_by_id(id: int, db: Session, raise_exc: bool = True
     return obj
 
 
+async def get_known_associates(poi: models.POI, db: Session):
+    """
+    Get poi known associates
+
+    Args:
+        poi (models.POI): The poi obj
+        db (Session): The database session
+
+    Returns:
+        list[models.KnownAssociate]
+    """
+    # Init crud
+    associate_crud = KnownAssociateCRUD(db=db)
+
+    qs = cast(list[models.KnownAssociate], await associate_crud.get_all())
+
+    return [
+        obj
+        for obj in qs
+        if not encryption_manager.decrypt_boolean(obj.is_deleted)
+        and bool(obj.poi_id == poi.id)
+    ]
+
+
 async def get_employment_history_by_id(id: int, db: Session, raise_exc: bool = True):
     """
     Get employment history by id
@@ -482,6 +602,30 @@ async def get_employment_history_by_id(id: int, db: Session, raise_exc: bool = T
         raise EmploymentHistoryNotFound()
 
     return obj
+
+
+async def get_employment_history(poi: models.POI, db: Session):
+    """
+    Get poi employment history
+
+    Args:
+        poi (models.POI): The poi obj
+        db (Session): The database session
+
+    Returns:
+        list[models.EmploymentHistory]
+    """
+    # Init crud
+    history_crud = EmploymentHistoryCRUD(db=db)
+
+    qs = cast(list[models.EmploymentHistory], await history_crud.get_all())
+
+    return [
+        obj
+        for obj in qs
+        if not encryption_manager.decrypt_boolean(obj.is_deleted)
+        and bool(obj.poi_id == poi.id)
+    ]
 
 
 async def get_veteran_status_by_poi(
@@ -547,6 +691,30 @@ async def get_educational_background_by_id(
     return obj
 
 
+async def get_educational_background(poi: models.POI, db: Session):
+    """
+    Get educational background
+
+    Args:
+        poi (models.POI): The poi obj
+        db (Session): The database session
+
+    Returns:
+        list[models.EducationalBackground]
+    """
+    # Init crud
+    education_crud = EducationalBackgroundCRUD(db=db)
+
+    qs = cast(list[models.EducationalBackground], await education_crud.get_all())
+
+    return [
+        obj
+        for obj in qs
+        if not encryption_manager.decrypt_boolean(obj.is_deleted)
+        and bool(obj.poi_id == poi.id)
+    ]
+
+
 async def get_frequented_spot_by_id(id: int, db: Session, raise_exc: bool = True):
     """
     Get frequented spot by id
@@ -575,3 +743,27 @@ async def get_frequented_spot_by_id(id: int, db: Session, raise_exc: bool = True
         raise FrequentedSpotNotFound()
 
     return obj
+
+
+async def get_frequented_spots(poi: models.POI, db: Session):
+    """
+    Get poi frequented spots
+
+    Args:
+        poi (models.POI): The poi obj
+        db (Session): The database session
+
+    Returns:
+        list[models.FrequentedSpot]
+    """
+    # Init crud
+    spot_crud = FrequentedSpotCRUD(db=db)
+
+    qs = cast(list[models.FrequentedSpot], await spot_crud.get_all())
+
+    return [
+        obj
+        for obj in qs
+        if not encryption_manager.decrypt_boolean(obj.is_deleted)
+        and bool(obj.poi_id == poi.id)
+    ]

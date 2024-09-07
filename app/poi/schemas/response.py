@@ -83,6 +83,15 @@ class IDDocumentResponse(ResponseSchema):
     data: IDDocument = Field(description="The details of the ID Document")
 
 
+class IDDocumentListResponse(ResponseSchema):
+    """
+    Response schema for id document list
+    """
+
+    msg: str = Field(default="ID Documents retrieved successfully")
+    data: list[IDDocument] = Field(description="The details of the ID Document")
+
+
 class IDDocumentDeleteResponse(ResponseSchema):
     """
     Response schema for id document delete request
@@ -99,6 +108,15 @@ class GSMNumberResponse(ResponseSchema):
 
     msg: str = Field(default="GSM retrieved successfully")
     data: GSMNumber = Field(description="The details of the gsm number")
+
+
+class GSMNumberListResponse(ResponseSchema):
+    """
+    Response schema for poi gsm numbers
+    """
+
+    msg: str = Field(default="GSM Numbers retrieved successfully")
+    data: list[GSMNumber] = Field(description="The list of gsm numbers")
 
 
 class GSMNumberDeleteResponse(ResponseSchema):
@@ -121,6 +139,17 @@ class ResidentialAddressResponse(ResponseSchema):
     )
 
 
+class ResidentialAddressListResponse(ResponseSchema):
+    """
+    Response schema for poi residential address list
+    """
+
+    msg: str = Field(default="Residential addresses retreived successfully")
+    data: list[ResidentialAddress] = Field(
+        description="The details of the residential addresses"
+    )
+
+
 class ResidentialAddressDeleteResponse(ResponseSchema):
     """
     Response schema for residential address delete requests
@@ -139,6 +168,17 @@ class KnownAssociateResponse(ResponseSchema):
     data: KnownAssociate = Field(description="The details of the known associate")
 
 
+class KnownAssociateListResponse(ResponseSchema):
+    """
+    Response schema for poi known associates responses
+    """
+
+    msg: str = Field(default="Known associates retreived successfully")
+    data: list[KnownAssociate] = Field(
+        description="The details of the poi's known associates"
+    )
+
+
 class KnownAssociateDeleteResponse(ResponseSchema):
     """
     Response schema for known associate delete request
@@ -155,6 +195,17 @@ class EmploymentHistoryResponse(ResponseSchema):
 
     msg: str = Field(default="Employment history retreived successfully")
     data: EmploymentHistory = Field(description="The details of the employment history")
+
+
+class EmploymentHistoryListResponse(ResponseSchema):
+    """
+    Response schema for poi employment history responses
+    """
+
+    msg: str = Field(default="POI Employment history retreived successfully")
+    data: list[EmploymentHistory] = Field(
+        description="The details of the poi's employment history"
+    )
 
 
 class EmploymentHistoryDeleteResponse(ResponseSchema):
@@ -186,6 +237,17 @@ class EducationalBackgroundResponse(ResponseSchema):
     )
 
 
+class EducationalBackgroundListResponse(ResponseSchema):
+    """
+    Response schema for the poi's educational background responses
+    """
+
+    msg: str = Field(default="POI educational background retreived successfully")
+    data: list[EducationalBackground] = Field(
+        description="The poi's educational background"
+    )
+
+
 class EducationalBackgroundDeleteResponse(ResponseSchema):
     """
     Response schema for educational background delete request
@@ -204,6 +266,17 @@ class POIOffenseResponse(ResponseSchema):
     data: POIOffense = Field(description="The details of the poi offense conviction")
 
 
+class POIOffenseListResponse(ResponseSchema):
+    """
+    Response schema for poi offense list responses
+    """
+
+    msg: str = Field(default="POI offenses retreived successfully")
+    data: list[POIOffense] = Field(
+        description="The details of the poi offenses conviction"
+    )
+
+
 class POIOffenseDeleteResponse(ResponseSchema):
     """
     Response schema for poi offense delete request
@@ -220,6 +293,17 @@ class FrequentedSpotResponse(ResponseSchema):
 
     msg: str = Field(default="Frequented spot retreived successfully")
     data: FrequentedSpot = Field(description="The details of the frequented spot")
+
+
+class FrequentedSpotListResponse(ResponseSchema):
+    """
+    Response schema for poi frequented spot list responses
+    """
+
+    msg: str = Field(default="POI Frequented spots retreived successfully")
+    data: list[FrequentedSpot] = Field(
+        description="The details of the poi's frequented spots"
+    )
 
 
 class FrequentedSpotDeleteResponse(ResponseSchema):
