@@ -1178,6 +1178,58 @@ async def create_poi_offense(
     return obj
 
 
+async def edit_poi_offense(
+    user: user_models.User,
+    poi_offense: models.POIOffense,
+    data: edit.POIOffenseEdit,
+    db: Session,
+):
+    """
+    Edit poi offense
+
+    Args:
+        user (user_models.User): The user obj
+        poi_offense (models.POIOffense): The poi offense obj
+        data (edit.POIOffenseEdit): The details of the poi
+        db (Session): The database session
+
+    Returns:
+        models.POIOffense
+    """
+    changelog = ""
+
+    poi_offense_dict = poi_offense.__dict__
+    for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
+        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
+        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+
+        if poi_offense_dict[field] and dec(poi_offense_dict[field]) != value:
+            changelog += f"- {dec(poi_offense_dict[field])} -> {value}\n"
+
+            setattr(poi_offense, field, enc(value))
+        elif not poi_offense_dict[field] and value:
+            changelog += f"- {poi_offense_dict[field]} -> {value}\n"
+
+            setattr(poi_offense, field, enc(value))
+
+    # Save changes
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=user,
+        resource="poi-offense",
+        action=f"edit:{poi_offense.id}",
+        notes=changelog,
+        db=db,
+    )
+
+    return poi_offense
+
+
+#################################################################################
+# FREQUENTED SPOT
+#################################################################################
 async def create_frequented_spot(
     user: user_models.User,
     poi: models.POI,

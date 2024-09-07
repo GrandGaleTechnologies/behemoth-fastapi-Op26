@@ -17,6 +17,7 @@ from app.poi.formatters import (
     format_known_associate,
     format_poi_application,
     format_poi_base,
+    format_poi_offense,
     format_residential_address,
     format_veteran_status,
 )
@@ -816,6 +817,109 @@ async def route_poi_education_delete(
 #########################################################################
 # POI OFFENSE
 #########################################################################
+@router.post(
+    "/{poi_id}/convict",
+    summary="Add POI Offense",
+    response_description="The details of the poi offense",
+    status_code=status.HTTP_201_CREATED,
+    response_model=response.POIOffenseResponse,
+    tags=[tags.POI_CONVICTION],
+)
+async def route_poi_offense_create(
+    poi_id: int,
+    offense_in: create.POIOffenseCreate,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint creates a poi offense
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Get offense
+    offense = cast(
+        models.Offense,
+        await selectors.get_offense_by_id(id=offense_in.offense_id, db=db),
+    )
+
+    # Create offense
+    poi_offense = await services.create_poi_offense(
+        user=curr_user, poi=poi, offense=offense, data=offense_in, db=db
+    )
+
+    return {"data": await format_poi_offense(conv=poi_offense)}
+
+
+@router.put(
+    "/conviction/{poi_offense_id}/",
+    summary="Edit POI Offense",
+    response_description="The new details of the poi offense",
+    status_code=status.HTTP_200_OK,
+    response_model=response.POIOffenseResponse,
+    tags=[tags.POI_CONVICTION],
+)
+async def route_poi_offense_edit(
+    poi_offense_id: int,
+    offense_in: edit.POIOffenseEdit,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+):
+    """
+    This endpoint edits the poi offense
+    """
+
+    # Get poi offense
+    poi_offense = cast(
+        models.POIOffense,
+        await selectors.get_poi_offense_by_id(id=poi_offense_id, db=db),
+    )
+
+    # Edit poi offense
+    new_poi_offense = await services.edit_poi_offense(
+        user=curr_user, poi_offense=poi_offense, data=offense_in, db=db
+    )
+
+    return {"data": await format_poi_offense(conv=new_poi_offense)}
+
+
+@router.delete(
+    "/conviction/{poi_offense_id}/",
+    summary="Delete POI Offense",
+    response_description="POI Offense deleted successfully",
+    status_code=status.HTTP_200_OK,
+    response_model=response.POIOffenseDeleteResponse,
+    tags=[tags.POI_CONVICTION],
+)
+async def route_poi_offense_delete(
+    poi_offense_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
+    """
+    This endpoint deletes a poi offense
+    """
+
+    # Get poi offense
+    poi_offense = cast(
+        models.POIOffense,
+        await selectors.get_poi_offense_by_id(id=poi_offense_id, db=db),
+    )
+
+    # Delete poi offense
+    poi_offense.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
+    poi_offense.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    db.commit()
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="poi-offense",
+        action=f"delete:{poi_offense.id}",
+        db=db,
+    )
+
+    return {}
+
 
 #########################################################################
 # FREQUENTED SPOTS

@@ -19,6 +19,7 @@ from app.poi.crud import (
     IDDocumentCRUD,
     KnownAssociateCRUD,
     OffenseCRUD,
+    POIOffenseCRUD,
     ResidentialAddressCRUD,
     VeteranStatusCRUD,
 )
@@ -30,6 +31,7 @@ from app.poi.exceptions import (
     KnownAssociateNotFound,
     OffeseNotFound,
     POINotFound,
+    POIOffenseNotFound,
     ResidentialAddressNotFound,
 )
 
@@ -299,6 +301,36 @@ async def get_poi_by_id(id: int, db: Session, raise_exc: bool = True):
     # Check if deleted
     if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
         raise POINotFound()
+
+    return obj
+
+
+async def get_poi_offense_by_id(id: int, db: Session, raise_exc: bool = True):
+    """
+    Get poi offense by id
+
+    Args:
+        id (int): The ID of the poi offense
+        db (Session): The database session
+        raise_exc (bool = True): raise a 404 if not found
+
+    Raises:
+        POIOffenseNotFound
+
+    Returns:
+        models.POIOffense | None
+    """
+    # Init crud
+    poi_offense_crud = POIOffenseCRUD(db=db)
+
+    # Get obj
+    obj = await poi_offense_crud.get(id=id)
+    if not obj and raise_exc:
+        raise POIOffenseNotFound()
+
+    # Check if deleted
+    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+        raise POIOffenseNotFound()
 
     return obj
 

@@ -19,6 +19,7 @@ class RouteTags(BaseModel):
     POI_EMPLOYMENT_HISTORY: str = "POI Employment History Endpoints"
     POI_VETERAN_STATUS: str = "POI Veteran Status Endpoints"
     POI_EDUCATIONAL_BACKGROUND: str = "POI Educational Background Endpoints"
+    POI_CONVICTION: str = "POI Offense (Conviction) Endpoints"
 
 
 @lru_cache

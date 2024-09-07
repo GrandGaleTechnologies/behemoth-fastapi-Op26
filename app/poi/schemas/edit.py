@@ -138,3 +138,15 @@ class EducationalBackgroundEdit(BaseModel):
     from_date: date | None = Field(default=None, description="Start date of education")
     to_date: date | None = Field(default=None, description="End date of education")
     current_institute: bool = Field(description="Is this the current institute")
+
+
+class POIOffenseEdit(BaseModel):
+    """
+    Edit schema for poi offenses
+    """
+
+    case_id: str | None = Field(default=None, description="The id of the case")
+    date_convicted: date | None = Field(
+        default=None, description="The date the poi was convicted"
+    )
+    notes: str | None = Field(default=None, description="Notes on the conviction")

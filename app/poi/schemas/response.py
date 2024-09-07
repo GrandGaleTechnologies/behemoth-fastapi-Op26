@@ -10,6 +10,7 @@ from app.poi.schemas.base import (
     Offense,
     POIApplicationProcess,
     POIBaseInformation,
+    POIOffense,
     POIOtherInformation,
     ResidentialAddress,
     VeteranStatus,
@@ -190,4 +191,22 @@ class EducationalBackgroundDeleteResponse(ResponseSchema):
     """
 
     msg: str = Field(default="Educational background deleted successfully")
+    data: None = None
+
+
+class POIOffenseResponse(ResponseSchema):
+    """
+    Response schema for poi offense responses
+    """
+
+    msg: str = Field(default="POI offense retreived successfully")
+    data: POIOffense = Field(description="The details of the poi offense conviction")
+
+
+class POIOffenseDeleteResponse(ResponseSchema):
+    """
+    Response schema for poi offense delete request
+    """
+
+    msg: str = Field(default="POI offense deleted successfully")
     data: None = None
