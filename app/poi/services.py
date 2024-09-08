@@ -179,8 +179,8 @@ async def create_poi(user: user_models.User, data: create.POICreate, db: Session
 
     # encrypt data
     encrypted_poi = {
-        "full_name": encryption_manager.encrypt_str(data.full_name),
-        "alias": encryption_manager.encrypt_str(data.alias),
+        "full_name": encryption_manager.encrypt_str(data.full_name.capitalize()),
+        "alias": encryption_manager.encrypt_str(data.alias.capitalize()),
         "dob": encryption_manager.encrypt_date(data.dob) if data.dob else None,
         "pob": encryption_manager.encrypt_str(data.pob) if data.pob else None,
         "nationality": encryption_manager.encrypt_str(data.nationality)
@@ -343,6 +343,10 @@ async def edit_poi(
     Returns:
         models.POI
     """
+
+    # Transformation
+    data.full_name = data.full_name.capitalize()
+    data.alias = data.alias.capitalize()
 
     # init changelog
     changelog = ""

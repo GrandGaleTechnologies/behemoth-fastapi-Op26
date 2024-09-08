@@ -13,6 +13,7 @@ from app.poi.schemas.base import (
     POIBaseInformation,
     POIOffense,
     POIOtherInformation,
+    POISummary,
     ResidentialAddress,
     VeteranStatus,
 )
@@ -72,6 +73,15 @@ class POIOtherInformationResponse(ResponseSchema):
 
     msg: str = Field(default="POI other profile retreieved successfully")
     data: POIOtherInformation = Field(description="The poi's other profile info")
+
+
+class PaginatedPOISummaryListResponse(PaginatedResponseSchema):
+    """
+    Response schema for pagianted poi list response
+    """
+
+    msg: str = Field(default="POIs retreieved successfully")
+    data: list[POISummary] = Field(description="The poi's other profile info")
 
 
 class IDDocumentResponse(ResponseSchema):

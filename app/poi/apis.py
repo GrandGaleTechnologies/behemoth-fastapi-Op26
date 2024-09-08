@@ -3,9 +3,10 @@ from typing import cast
 
 from fastapi import APIRouter, status
 
-from app.common.annotations import DatabaseSession
+from app.common.annotations import DatabaseSession, PaginationParams
 from app.common.encryption import EncryptionManager
 from app.common.exceptions import NotFound
+from app.common.paginators import get_pagination_metadata
 from app.core.settings import get_settings
 from app.core.tags import get_tags
 from app.poi import models, selectors, services
@@ -19,6 +20,7 @@ from app.poi.formatters import (
     format_poi_application,
     format_poi_base,
     format_poi_offense,
+    format_poi_summary,
     format_residential_address,
     format_veteran_status,
 )
@@ -83,6 +85,48 @@ async def route_poi_create(
     # await services.create_poi_application_process(poi=poi, db=db)
 
     return {"data": await format_poi_base(poi=poi)}
+
+
+@router.get(
+    "",
+    summary="Get POI List",
+    response_description="The paginated list of poi's",
+    status_code=status.HTTP_200_OK,
+    response_model=response.PaginatedPOISummaryListResponse,
+)
+async def route_poi_list(
+    pagination: PaginationParams,
+    curr_user: CurrentUser,
+    db: DatabaseSession,
+    is_pinned: bool | None = None,
+):
+    """
+    This endpoint returns the paginated list of pois
+    """
+
+    # Create log
+    await create_log(
+        user=curr_user,
+        resource="poi",
+        action="get-paginated-list",
+        notes=f"Q: {pagination.q}, P: {pagination.page}, S: {pagination.size}, OB: {pagination.order_by}",
+        db=db,
+    )
+
+    # get offenses
+    pois, tnoi = await selectors.get_paginated_poi_list(
+        is_pinned=is_pinned, pagination=pagination, db=db
+    )
+
+    return {
+        "data": [await format_poi_summary(poi=poi) for poi in pois],
+        "meta": get_pagination_metadata(
+            tno_items=tnoi,
+            count=len(pois),
+            page=pagination.page,
+            size=pagination.size,
+        ),
+    }
 
 
 @router.put(

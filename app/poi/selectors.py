@@ -129,6 +129,89 @@ async def get_paginated_offense_list(pagination: PaginationParamsType, db: Sessi
     return results, qs.count()
 
 
+async def get_paginated_poi_list(
+    is_pinned: bool | None,
+    pagination: PaginationParamsType,
+    db: Session,
+):
+    """
+    Get paginated poi list
+
+    Args:
+        is_pinned: bool | None: Return pinned or unpinned poi's or all if none
+        pagination (PaginationParamsType): The pagination details
+        db (Session): The database session
+
+    Returns:
+        list[models.POI]
+    """
+    # Init crud
+    poi_crud = POICRUD(db=db)
+
+    # init qs
+    qs = cast(Query[models.POI], await poi_crud.get_all(return_qs=True))
+
+    # order by
+    if pagination.order_by == "asc":
+        qs = qs.order_by(models.POI.id.asc())
+    else:
+        qs = qs.order_by(models.POI.id.desc())
+
+    # Search
+    if pagination.q:
+        # Transformations
+        # Decrypted list
+        dec_all = qs.all()
+        for obj in dec_all:
+            obj.full_name = encryption_manager.decrypt_str(obj.full_name)  # type: ignore
+
+        # Init objs
+        objs: list[models.POI] = []
+
+        matches = await find_all_matches(
+            query=pagination.q.capitalize(),  # Capitalize to normalize with db items
+            options=[str(poi.full_name) for poi in dec_all],
+        )
+
+        for match in matches:
+            # Get matching obj
+            obj = [obj for obj in dec_all if bool(obj.full_name == match)][0]
+
+            # encrypt name and alias again
+            obj.full_name = encryption_manager.encrypt_str(obj.full_name)  # type: ignore
+
+            # Append to list
+            objs.append(obj)
+
+        # Check for pin status
+        if is_pinned is not None:
+            objs = [
+                obj
+                for obj in objs
+                if encryption_manager.decrypt_boolean(obj.is_pinned) == is_pinned
+            ]
+
+        # Paginate
+        return paginate_list(
+            items=objs, page=pagination.page, size=pagination.size
+        ), len(objs)  # noqa
+
+    # Paginate qs
+    results: list[models.POI] = paginate(
+        qs=qs, page=pagination.page, size=pagination.size
+    )
+
+    # Check for pin status
+    if is_pinned is not None:
+        results = [
+            obj
+            for obj in results
+            if encryption_manager.decrypt_boolean(obj.is_pinned) == is_pinned
+        ]
+
+    return results, qs.count()
+
+
 async def get_poi_statistics(db: Session):
     """
     Get POI Statistics
