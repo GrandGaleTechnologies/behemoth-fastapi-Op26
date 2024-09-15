@@ -131,7 +131,7 @@ class POIBaseInformation(BaseModel):
     created_at: datetime = Field(description="The time the poi was created")
 
     @field_validator("pfp", mode="before")
-    def val_pfp_url(cls, v: str | None):
+    def val_pfp_url(cls, v: str | None):  # type: ignore
         """
         Field validator for pfp_url
 

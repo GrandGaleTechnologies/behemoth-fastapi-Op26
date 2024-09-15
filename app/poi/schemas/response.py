@@ -62,7 +62,16 @@ class POIPinResponse(ResponseSchema):
     Response schema for poi pin
     """
 
-    msg: str = Field(default="Succesfully pinned poi")
+    msg: str = Field(default="Succesfully Pinned/Unpinned poi")
+    data: None = None
+
+
+class POIDeleteRequestResponse(ResponseSchema):
+    """
+    Response schema for poi delete
+    """
+
+    msg: str = Field(default="Succesfully Deleted Poi")
     data: None = None
 
 

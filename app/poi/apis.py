@@ -137,7 +137,9 @@ async def route_poi_list(
     response_model=response.POIPinResponse,
     tags=[tags.POI],
 )
-async def route_poi_pin_toggle(poi_id: int, _: CurrentUser, db: DatabaseSession):
+async def route_poi_pin_toggle(
+    poi_id: int, curr_user: CurrentUser, db: DatabaseSession
+):
     """
     This endpoint toggles the poi's pin status
     """
@@ -146,12 +148,26 @@ async def route_poi_pin_toggle(poi_id: int, _: CurrentUser, db: DatabaseSession)
     poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
 
     # Toggle pin
+    if encrypt_man.decrypt_boolean(poi.is_pinned):
+        stat = "POI Successfully Unpinned"
+    else:
+        stat = "POI Succcessfully Pinned"
+
     poi.is_pinned = encrypt_man.encrypt_boolean(  # type: ignore
         not encrypt_man.decrypt_boolean(poi.is_pinned)
     )
     db.commit()
 
-    return {}
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="poi",
+        action=f"edit-pin:{poi.id}",
+        notes=stat,
+        db=db,
+    )
+
+    return {"msg": stat}
 
 
 @router.put(
@@ -187,6 +203,39 @@ async def route_poi_base_info_edit(
     )
 
     return {"data": await format_poi_base(poi=edited_poi)}
+
+
+@router.delete(
+    "/{poi_id}/",
+    summary="Delete POI",
+    response_description="POI Deleted Successfully",
+    status_code=status.HTTP_200_OK,
+    response_model=response.POIDeleteRequestResponse,
+)
+async def route_poi_delete(poi_id: int, curr_user: CurrentUser, db: DatabaseSession):
+    """
+    This endpoint deletes the poi
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Delete doc
+    poi.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
+    poi.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    db.commit()
+
+    # NOTE: Mark other items like id-doc, etc as deleted
+
+    # Create logs
+    await create_log(
+        user=curr_user,
+        resource="poi",
+        action=f"delete:{poi.id}",
+        db=db,
+    )
+
+    return {}
 
 
 @router.get(
