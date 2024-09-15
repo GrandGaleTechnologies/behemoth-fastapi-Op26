@@ -337,7 +337,9 @@ async def get_pinned_pois(db: Session):
     # decrypt pin status
     data = []
     for obj in qs:
-        if encryption_manager.decrypt_boolean(obj.is_pinned):
+        if encryption_manager.decrypt_boolean(
+            obj.is_pinned
+        ) and not encryption_manager.decrypt_boolean(obj.is_deleted):
             data.append(obj)
 
     return data
@@ -359,7 +361,11 @@ async def get_recently_added_pois(db: Session):
     # init qs
     qs = cast(Query[models.POI], await poi_crud.get_all(return_qs=True))
 
-    return qs.order_by(models.POI.id.desc()).all()
+    return [
+        obj
+        for obj in qs.order_by(models.POI.id.desc()).all()
+        if not encryption_manager.decrypt_boolean(obj.is_deleted)
+    ]
 
 
 async def get_poi_by_id(id: int, db: Session, raise_exc: bool = True):
