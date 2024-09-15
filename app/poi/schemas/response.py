@@ -57,6 +57,15 @@ class POIApplicationProcessResponse(ResponseSchema):
     )
 
 
+class POIPinResponse(ResponseSchema):
+    """
+    Response schema for poi pin
+    """
+
+    msg: str = Field(default="Succesfully pinned poi")
+    data: None = None
+
+
 class POIBaseInformationResponse(ResponseSchema):
     """
     Response schema for poi's

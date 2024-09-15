@@ -130,6 +130,31 @@ async def route_poi_list(
 
 
 @router.put(
+    "/{poi_id}/pin/toggle",
+    summary="Toggle POI Pin Status",
+    response_description="POI Pinned/Unpinned successfully",
+    status_code=status.HTTP_200_OK,
+    response_model=response.POIPinResponse,
+    tags=[tags.POI],
+)
+async def route_poi_pin_toggle(poi_id: int, _: CurrentUser, db: DatabaseSession):
+    """
+    This endpoint toggles the poi's pin status
+    """
+
+    # Get poi
+    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
+
+    # Toggle pin
+    poi.is_pinned = encrypt_man.encrypt_boolean(  # type: ignore
+        not encrypt_man.decrypt_boolean(poi.is_pinned)
+    )
+    db.commit()
+
+    return {}
+
+
+@router.put(
     "/{poi_id}/base",
     summary="Edit POI Base information",
     response_description="The poi's edited base information",
