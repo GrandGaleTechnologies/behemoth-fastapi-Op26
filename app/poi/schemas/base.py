@@ -1,6 +1,12 @@
 from datetime import date, datetime, time
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from app.core.settings import get_settings
+
+
+# Globals
+settings = get_settings()
 
 
 class Offense(BaseModel):
@@ -46,6 +52,18 @@ class POI(BaseModel):
 
     is_completed: bool = Field(description="Completion status")
     is_pinned: bool = Field(description="Pinned status")
+
+    @field_validator("pfp_url", mode="before")
+    def val_pfp_url(cls, v: str | None):
+        """
+        Field validator for pfp_url
+
+        Tasks:
+            - Format the path to a complete url
+        """
+        if v:
+            return settings.PUBLIC_URL + v
+        return v
 
 
 class POIApplicationProcess(BaseModel):
@@ -111,6 +129,20 @@ class POIBaseInformation(BaseModel):
         description="The list of iD Documents"
     )
     created_at: datetime = Field(description="The time the poi was created")
+
+    @field_validator("pfp", mode="before")
+    def val_pfp_url(cls, v: str | None):
+        """
+        Field validator for pfp_url
+
+        Tasks:
+            - Format the path to a complete url
+        """
+        if v:
+            if not v.startswith("/"):
+                v = "/" + v
+            return settings.PUBLIC_URL + v
+        return v
 
 
 class POIOtherInformation(BaseModel):
