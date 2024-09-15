@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     # App
     DEBUG: bool = os.environ.get("DEBUG")  # type: ignore
+    PUBLIC_URL: str = os.environ.get("PUBLIC_URL")  # type: ignore
     UPLOAD_DIR: str = os.environ.get("UPLOAD_DIR")  # type: ignore
 
     # Security
