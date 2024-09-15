@@ -17,8 +17,12 @@ from app.core.handlers import (
     internal_server_error_exception_handler,
     request_validation_exception_handler,
 )
+from app.core.settings import get_settings
 from app.poi.apis import router as poi_router
 from app.user.apis import router as user_router
+
+# Globals
+settings = get_settings()
 
 
 # Lifespan (startup, shutdown)
@@ -81,14 +85,16 @@ async def health(_: Session = Depends(get_session)):
 
 
 # Media download
-@app.get("/media")
+@app.get("/media/{path:path}")
 async def media_download(
     path: str,
 ):
     """
     Download media
     """
-    if not os.path.exists(f"media/{path}") or not os.path.isfile(f"media/{path}"):
+    if not os.path.exists(f"{settings.UPLOAD_DIR}/{path}") or not os.path.isfile(
+        f"media/{path}"
+    ):
         raise NotFound("File not found")
 
     return FileResponse(path=f"media/{path}")
