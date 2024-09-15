@@ -189,6 +189,7 @@ async def get_paginated_poi_list(
                 obj
                 for obj in objs
                 if encryption_manager.decrypt_boolean(obj.is_pinned) == is_pinned
+                and not encryption_manager.decrypt_boolean(obj.is_deleted)
             ]
 
         # Paginate
@@ -207,6 +208,7 @@ async def get_paginated_poi_list(
             obj
             for obj in results
             if encryption_manager.decrypt_boolean(obj.is_pinned) == is_pinned
+            and not encryption_manager.decrypt_boolean(obj.is_deleted)
         ]
 
     return results, qs.count()
