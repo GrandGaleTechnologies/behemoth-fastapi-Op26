@@ -98,6 +98,7 @@ async def route_poi_list(
     pagination: PaginationParams,
     curr_user: CurrentUser,
     db: DatabaseSession,
+    gsm: str | None = None,
     is_pinned: bool | None = None,
 ):
     """
@@ -115,7 +116,7 @@ async def route_poi_list(
 
     # get offenses
     pois, tnoi = await selectors.get_paginated_poi_list(
-        is_pinned=is_pinned, pagination=pagination, db=db
+        gsm=gsm, is_pinned=is_pinned, pagination=pagination, db=db
     )
 
     return {

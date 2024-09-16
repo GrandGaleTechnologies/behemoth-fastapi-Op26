@@ -130,6 +130,7 @@ async def get_paginated_offense_list(pagination: PaginationParamsType, db: Sessi
 
 
 async def get_paginated_poi_list(
+    gsm: str | None,
     is_pinned: bool | None,
     pagination: PaginationParamsType,
     db: Session,
@@ -138,6 +139,7 @@ async def get_paginated_poi_list(
     Get paginated poi list
 
     Args:
+        gsm (str | None): Search by gsm number
         is_pinned: bool | None: Return pinned or unpinned poi's or all if none
         pagination (PaginationParamsType): The pagination details
         db (Session): The database session
@@ -147,15 +149,51 @@ async def get_paginated_poi_list(
     """
     # Init crud
     poi_crud = POICRUD(db=db)
+    gsm_crud = GSMNumberCRUD(db=db)
 
     # init qs
     qs = cast(Query[models.POI], await poi_crud.get_all(return_qs=True))
+    qs = qs.order_by(models.POI.id.desc())
 
     # order by
     if pagination.order_by == "asc":
         qs = qs.order_by(models.POI.id.asc())
     else:
         qs = qs.order_by(models.POI.id.desc())
+
+    # Search by gsm
+    if gsm:
+        results: list[models.POI] = []
+
+        # Filter for matching numbers
+        gsm_nums = cast(list[models.GSMNumber], await gsm_crud.get_all())
+        for num in gsm_nums:
+            if encryption_manager.decrypt_str(num.number).startswith(gsm):
+                results.append(
+                    cast(models.POI, await get_poi_by_id(id=num.poi_id, db=db))  # type: ignore
+                )
+
+        # Filter for deleted
+        results = [
+            obj
+            for obj in results
+            if not encryption_manager.decrypt_boolean(obj.is_deleted)
+        ]
+
+        # Check for pin status
+        if is_pinned is not None:
+            results = [
+                obj
+                for obj in qs.all()
+                if encryption_manager.decrypt_boolean(obj.is_pinned) == is_pinned
+                and not encryption_manager.decrypt_boolean(obj.is_deleted)
+            ]
+            paginated_results: list[models.POI] = paginate_list(
+                items=results, page=pagination.page, size=pagination.size
+            )
+            return paginated_results, len(results)
+
+        return results, qs.count()
 
     # Search
     if pagination.q:

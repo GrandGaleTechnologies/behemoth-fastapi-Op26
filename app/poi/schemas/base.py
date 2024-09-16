@@ -39,6 +39,11 @@ class POI(BaseModel):
     full_name: str = Field(description="Full name of the POI")
     alias: str = Field(description="Alias of the POI")
     dob: date | None = Field(default=None, description="Date of birth")
+    state_of_origin: str | None = Field(default=None, description="The state of origin")
+    lga_of_origin: str | None = Field(default=None, description="The lga of the poi")
+    district_of_origin: str | None = Field(
+        default=None, description="The district of the poi"
+    )
     pob: str | None = Field(default=None, description="Place of birth")
     nationality: str | None = Field(default=None, description="Nationality")
     religion: str | None = Field(default=None, description="Religion")
@@ -117,6 +122,11 @@ class POIBaseInformation(BaseModel):
     full_name: str = Field(description="Full name of the POI")
     alias: str = Field(description="Alias of the POI")
     dob: date | None = Field(description="Date of birth")
+    state_of_origin: str | None = Field(default=None, description="The state of origin")
+    lga_of_origin: str | None = Field(default=None, description="The lga of the poi")
+    district_of_origin: str | None = Field(
+        default=None, description="The district of the poi"
+    )
     pob: str | None = Field(description="Place of birth")
     nationality: str | None = Field(description="Nationality")
     religion: str | None = Field(description="Religion")
