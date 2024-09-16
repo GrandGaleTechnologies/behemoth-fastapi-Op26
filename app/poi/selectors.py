@@ -143,7 +143,7 @@ async def get_paginated_poi_list(
         db (Session): The database session
 
     Returns:
-        list[models.POI]
+        (list[models.POI], int): The list of pois and the total length
     """
     # Init crud
     poi_crud = POICRUD(db=db)
@@ -193,23 +193,34 @@ async def get_paginated_poi_list(
             ]
 
         # Paginate
-        return paginate_list(
+        paginated_objs = paginate_list(
             items=objs, page=pagination.page, size=pagination.size
-        ), len(objs)  # noqa
+        )
+
+        return paginated_objs, len(objs)  # noqa
 
     # Paginate qs
     results: list[models.POI] = paginate(
         qs=qs, page=pagination.page, size=pagination.size
     )
 
+    # Filter for deleted
+    results = [
+        obj for obj in results if not encryption_manager.decrypt_boolean(obj.is_deleted)
+    ]
+
     # Check for pin status
     if is_pinned is not None:
         results = [
             obj
-            for obj in results
+            for obj in qs.all()
             if encryption_manager.decrypt_boolean(obj.is_pinned) == is_pinned
             and not encryption_manager.decrypt_boolean(obj.is_deleted)
         ]
+        paginated_results: list[models.POI] = paginate_list(
+            items=results, page=pagination.page, size=pagination.size
+        )
+        return paginated_results, len(results)
 
     return results, qs.count()
 
