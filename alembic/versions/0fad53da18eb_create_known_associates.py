@@ -35,12 +35,22 @@ def upgrade() -> None:
         sa.Column("relationship", sa.String, nullable=False),
         sa.Column("occupation", sa.String, nullable=True),
         sa.Column("residential_address", sa.String, nullable=True),
-        sa.Column("last_seen_date", sa.String, nullable=True),
-        sa.Column("last_seen_time", sa.String, nullable=True),
-        sa.Column("is_deleted", sa.String, nullable=False),
-        sa.Column("edited_at", sa.String, nullable=True),
-        sa.Column("created_at", sa.String, nullable=False),
-        sa.Column("deleted_at", sa.String, nullable=True),
+        sa.Column("last_seen_date", sa.Date, nullable=True),
+        sa.Column("last_seen_time", sa.Time(timezone=True), nullable=True),
+        sa.Column("is_deleted", sa.Boolean, server_default=sa.false(), nullable=False),
+        sa.Column(
+            "edited_at",
+            sa.DateTime(timezone=True),
+            onupdate=sa.text("now()"),
+            nullable=True,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
     )
 
 

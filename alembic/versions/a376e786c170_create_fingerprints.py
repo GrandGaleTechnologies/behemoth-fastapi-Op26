@@ -34,10 +34,20 @@ def upgrade() -> None:
         sa.Column("right_thumb", sa.String, nullable=False),
         sa.Column("left_pointer", sa.String, nullable=False),
         sa.Column("right_pointer", sa.String, nullable=False),
-        sa.Column("is_deleted", sa.String, nullable=False),
-        sa.Column("edited_at", sa.String, nullable=True),
-        sa.Column("created_at", sa.String, nullable=False),
-        sa.Column("deleted_at", sa.String, nullable=True),
+        sa.Column("is_deleted", sa.Boolean, server_default=sa.false(), nullable=False),
+        sa.Column(
+            "edited_at",
+            sa.DateTime(timezone=True),
+            onupdate=sa.text("now()"),
+            nullable=True,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
     )
 
 

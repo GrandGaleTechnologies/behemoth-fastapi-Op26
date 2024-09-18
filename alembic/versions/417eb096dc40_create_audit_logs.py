@@ -33,7 +33,12 @@ def upgrade() -> None:
         sa.Column("resource", sa.String, nullable=False),
         sa.Column("action", sa.String, nullable=False),
         sa.Column("notes", sa.String, nullable=True),
-        sa.Column("created_at", sa.String, nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
     )
 
 

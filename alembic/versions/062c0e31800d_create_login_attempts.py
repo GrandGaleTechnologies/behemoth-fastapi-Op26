@@ -25,8 +25,13 @@ def upgrade() -> None:
         "login_attempts",
         sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
         sa.Column("badge_num", sa.String, nullable=False),
-        sa.Column("is_success", sa.String, nullable=False),
-        sa.Column("attempted_at", sa.String, nullable=False),
+        sa.Column("is_success", sa.Boolean, server_default=sa.false(), nullable=False),
+        sa.Column(
+            "attempted_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
     )
 
 

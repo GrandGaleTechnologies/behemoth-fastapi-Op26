@@ -32,14 +32,24 @@ def upgrade() -> None:
         ),
         sa.Column("company", sa.String, nullable=False),
         sa.Column("employment_type", sa.String, nullable=False),
-        sa.Column("from_date", sa.String, nullable=True),
-        sa.Column("to_date", sa.String, nullable=True),
-        sa.Column("current_job", sa.String, nullable=False),
+        sa.Column("from_date", sa.Date, nullable=True),
+        sa.Column("to_date", sa.Date, nullable=True),
+        sa.Column("current_job", sa.Boolean, default=False, nullable=False),
         sa.Column("description", sa.String, nullable=True),
-        sa.Column("is_deleted", sa.String, nullable=False),
-        sa.Column("edited_at", sa.String, nullable=True),
-        sa.Column("created_at", sa.String, nullable=False),
-        sa.Column("deleted_at", sa.String, nullable=True),
+        sa.Column("is_deleted", sa.Boolean, server_default=sa.false(), nullable=False),
+        sa.Column(
+            "edited_at",
+            sa.DateTime(timezone=True),
+            onupdate=sa.text("now()"),
+            nullable=True,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
     )
 
 

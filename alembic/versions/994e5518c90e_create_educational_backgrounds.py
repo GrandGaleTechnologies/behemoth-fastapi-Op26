@@ -34,13 +34,25 @@ def upgrade() -> None:
         sa.Column("institute_name", sa.String, nullable=False),
         sa.Column("country", sa.String, nullable=False),
         sa.Column("state", sa.String, nullable=False),
-        sa.Column("current_institute", sa.String, nullable=False),
-        sa.Column("from_date", sa.String, nullable=True),
-        sa.Column("to_date", sa.String, nullable=True),
-        sa.Column("is_deleted", sa.String, nullable=False),
-        sa.Column("edited_at", sa.String, nullable=True),
-        sa.Column("created_at", sa.String, nullable=False),
-        sa.Column("deleted_at", sa.String, nullable=True),
+        sa.Column(
+            "current_institute", sa.Boolean, server_default=sa.false(), nullable=False
+        ),
+        sa.Column("from_date", sa.Date, nullable=True),
+        sa.Column("to_date", sa.Date, nullable=True),
+        sa.Column("is_deleted", sa.Boolean, server_default=sa.false(), nullable=False),
+        sa.Column(
+            "edited_at",
+            sa.DateTime(timezone=True),
+            onupdate=sa.text("now()"),
+            nullable=True,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
     )
 
 

@@ -28,7 +28,8 @@ def upgrade() -> None:
         sa.Column("password", sa.String, nullable=False),
         sa.Column(
             "created_at",
-            sa.String,
+            sa.DateTime,
+            server_default=sa.text("now()"),
             nullable=False,
         ),
     )
