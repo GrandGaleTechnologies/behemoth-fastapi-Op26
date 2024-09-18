@@ -1,5 +1,16 @@
 from datetime import datetime
-from sqlalchemy import Column, ForeignKey, Integer, String, Text
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    Time,
+)
 from sqlalchemy.orm import Mapped, relationship
 
 from app.common.encryption import EncryptionManager
@@ -21,7 +32,7 @@ class Offense(DBBase):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
-    created_at = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.now(), nullable=False)
 
 
 class POI(DBBase):
@@ -35,7 +46,7 @@ class POI(DBBase):
     pfp_url = Column(String, nullable=True)
     full_name = Column(String, nullable=False)
     alias = Column(String, nullable=False)
-    dob = Column(String, nullable=True)
+    dob = Column(DateTime(timezone=True), nullable=True)
     state_of_origin = Column(String, nullable=True)
     lga_of_origin = Column(String, nullable=True)
     district_of_origin = Column(String, nullable=True)
@@ -44,30 +55,24 @@ class POI(DBBase):
     religion = Column(String, nullable=True)
     political_affiliation = Column(String, nullable=True)
     tribal_union = Column(String, nullable=True)
-    last_seen_date = Column(String, nullable=True)
-    last_seen_time = Column(String, nullable=True)
+    last_seen_date = Column(Date, nullable=True)
+    last_seen_time = Column(Time(timezone=True), nullable=True)
     notes = Column(Text, nullable=True)
-    is_completed = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
-    )
     is_pinned = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
-    )
-
-    is_deleted = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
-    )
-    edited_at = Column(String, nullable=True)
-    created_at = Column(
-        String,
+        Boolean,
+        default=False,
         nullable=False,
-        default=encryption_manager.encrypt_datetime(datetime.now()),
     )
-    deleted_at = Column(String, nullable=True)
 
-    application: Mapped["POIApplicationProcess"] = relationship(
-        "POIApplicationProcess", backref="pois"
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    edited_at = Column(DateTime(timezone=True), onupdate=datetime.now(), nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=datetime.now(),
+        nullable=False,
     )
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+
     veteran_status: Mapped["VeteranStatus"] = relationship(
         "VeteranStatus", backref="pois"
     )
@@ -107,16 +112,14 @@ class IDDocument(DBBase):
     type = Column(String, nullable=False)
     id_number = Column(String, nullable=False)
 
-    is_deleted = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
-    )
-    edited_at = Column(String, nullable=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    edited_at = Column(DateTime(timezone=True), onupdate=datetime.now(), nullable=True)
     created_at = Column(
-        String,
+        DateTime(timezone=True),
+        default=datetime.now(),
         nullable=False,
-        default=encryption_manager.encrypt_datetime(datetime.now()),
     )
-    deleted_at = Column(String, nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class GSMNumber(DBBase):
@@ -130,18 +133,17 @@ class GSMNumber(DBBase):
     poi_id = Column(Integer, ForeignKey("pois.id", ondelete="CASCADE"), nullable=False)
     service_provider = Column(String, nullable=False)
     number = Column(String, nullable=False)
-    last_call_date = Column(String, nullable=True)
-    last_call_time = Column(String, nullable=True)
-    is_deleted = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
-    )
-    edited_at = Column(String, nullable=True)
+    last_call_date = Column(Date, nullable=True)
+    last_call_time = Column(Time(timezone=True), nullable=True)
+
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    edited_at = Column(DateTime(timezone=True), onupdate=datetime.now(), nullable=True)
     created_at = Column(
-        String,
+        DateTime(timezone=True),
+        default=datetime.now(),
         nullable=False,
-        default=encryption_manager.encrypt_datetime(datetime.now()),
     )
-    deleted_at = Column(String, nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class ResidentialAddress(DBBase):
@@ -157,16 +159,15 @@ class ResidentialAddress(DBBase):
     state = Column(String, nullable=False)
     city = Column(String, nullable=False)
     address = Column(String, nullable=True)
-    is_deleted = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
-    )
-    edited_at = Column(String, nullable=True)
+
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    edited_at = Column(DateTime(timezone=True), onupdate=datetime.now(), nullable=True)
     created_at = Column(
-        String,
+        DateTime(timezone=True),
+        default=datetime.now(),
         nullable=False,
-        default=encryption_manager.encrypt_datetime(datetime.now()),
     )
-    deleted_at = Column(String, nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class KnownAssociate(DBBase):
@@ -183,19 +184,17 @@ class KnownAssociate(DBBase):
     relationship = Column(String, nullable=False)
     occupation = Column(String, nullable=True)
     residential_address = Column(String, nullable=True)
-    last_seen_date = Column(String, nullable=True)
-    last_seen_time = Column(String, nullable=True)
+    last_seen_date = Column(Date, nullable=True)
+    last_seen_time = Column(Time(timezone=True), nullable=True)
 
-    is_deleted = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
-    )
-    edited_at = Column(String, nullable=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    edited_at = Column(DateTime(timezone=True), onupdate=datetime.now(), nullable=True)
     created_at = Column(
-        String,
+        DateTime(timezone=True),
+        default=datetime.now(),
         nullable=False,
-        default=encryption_manager.encrypt_datetime(datetime.now()),
     )
-    deleted_at = Column(String, nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class EmploymentHistory(DBBase):
@@ -209,21 +208,19 @@ class EmploymentHistory(DBBase):
     poi_id = Column(Integer, ForeignKey("pois.id", ondelete="CASCADE"), nullable=False)
     company = Column(String, nullable=False)
     employment_type = Column(String, nullable=False)
-    from_date = Column(String, nullable=True)
-    to_date = Column(String, nullable=True)
-    current_job = Column(String, nullable=False)
+    from_date = Column(Date, nullable=True)
+    to_date = Column(Date, nullable=True)
+    current_job = Column(Boolean, default=False, nullable=False)
     description = Column(String, nullable=True)
 
-    is_deleted = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
-    )
-    edited_at = Column(String, nullable=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    edited_at = Column(DateTime(timezone=True), onupdate=datetime.now(), nullable=True)
     created_at = Column(
-        String,
+        DateTime(timezone=True),
+        default=datetime.now(),
         nullable=False,
-        default=encryption_manager.encrypt_datetime(datetime.now()),
     )
-    deleted_at = Column(String, nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class VeteranStatus(DBBase):
@@ -237,25 +234,23 @@ class VeteranStatus(DBBase):
     poi_id = Column(
         Integer, ForeignKey("pois.id", ondelete="CASCADE"), unique=True, nullable=False
     )
-    is_veteran = Column(String, nullable=False)
+    is_veteran = Column(Boolean, default=False, nullable=False)
     section = Column(String, nullable=False)
     location = Column(String, nullable=False)
     id_card = Column(String, nullable=True)
     id_card_issuer = Column(String, nullable=True)
-    from_date = Column(String, nullable=True)
-    to_date = Column(String, nullable=True)
+    from_date = Column(Date, nullable=True)
+    to_date = Column(Date, nullable=True)
     notes = Column(Text, nullable=True)
 
-    is_deleted = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
-    )
-    edited_at = Column(String, nullable=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    edited_at = Column(DateTime(timezone=True), onupdate=datetime.now(), nullable=True)
     created_at = Column(
-        String,
+        DateTime(timezone=True),
+        default=datetime.now(),
         nullable=False,
-        default=encryption_manager.encrypt_datetime(datetime.now()),
     )
-    deleted_at = Column(String, nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class EducationalBackground(DBBase):
@@ -271,20 +266,18 @@ class EducationalBackground(DBBase):
     institute_name = Column(String, nullable=False)
     country = Column(String, nullable=False)
     state = Column(String, nullable=False)
-    from_date = Column(String, nullable=True)
-    to_date = Column(String, nullable=True)
-    current_institute = Column(String, nullable=False)
+    from_date = Column(Date, nullable=True)
+    to_date = Column(Date, nullable=True)
+    current_institute = Column(Boolean, default=False, nullable=False)
 
-    is_deleted = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
-    )
-    edited_at = Column(String, nullable=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    edited_at = Column(DateTime(timezone=True), onupdate=datetime.now(), nullable=True)
     created_at = Column(
-        String,
+        DateTime(timezone=True),
+        default=datetime.now(),
         nullable=False,
-        default=encryption_manager.encrypt_datetime(datetime.now()),
     )
-    deleted_at = Column(String, nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class POIOffense(DBBase):
@@ -300,20 +293,19 @@ class POIOffense(DBBase):
         Integer, ForeignKey("offenses.id", ondelete="CASCADE"), nullable=False
     )
     case_id = Column(String, nullable=True)
-    date_convicted = Column(String, nullable=True)
+    date_convicted = Column(Date, nullable=True)
     notes = Column(Text, nullable=True)
 
-    offense: Mapped[Offense] = relationship("Offense", backref="poi_offenses")
-    is_deleted = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
-    )
-    edited_at = Column(String, nullable=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    edited_at = Column(DateTime(timezone=True), onupdate=datetime.now(), nullable=True)
     created_at = Column(
-        String,
+        DateTime(timezone=True),
+        default=datetime.now(),
         nullable=False,
-        default=encryption_manager.encrypt_datetime(datetime.now()),
     )
-    deleted_at = Column(String, nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+
+    offense: Mapped[Offense] = relationship("Offense", backref="poi_offenses")
 
 
 class FrequentedSpot(DBBase):
@@ -329,20 +321,18 @@ class FrequentedSpot(DBBase):
     state = Column(String, nullable=False)
     lga = Column(String, nullable=False)
     address = Column(String, nullable=False)
-    from_date = Column(String, nullable=True)
-    to_date = Column(String, nullable=True)
+    from_date = Column(Date, nullable=True)
+    to_date = Column(Date, nullable=True)
     notes = Column(Text, nullable=True)
 
-    is_deleted = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
-    )
-    edited_at = Column(String, nullable=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    edited_at = Column(DateTime(timezone=True), onupdate=datetime.now(), nullable=True)
     created_at = Column(
-        String,
+        DateTime(timezone=True),
+        default=datetime.now(),
         nullable=False,
-        default=encryption_manager.encrypt_datetime(datetime.now()),
     )
-    deleted_at = Column(String, nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class Fingerprint(DBBase):
@@ -359,38 +349,11 @@ class Fingerprint(DBBase):
     left_pointer = Column(String, nullable=False)
     right_pointer = Column(String, nullable=False)
 
-    is_deleted = Column(
-        String, nullable=False, default=encryption_manager.encrypt_boolean(False)
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    edited_at = Column(DateTime(timezone=True), onupdate=datetime.now(), nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=datetime.now(),
+        nullable=False,
     )
-    edited_at = Column(String, nullable=True)
-    created_at = Column(String, nullable=False)
-    deleted_at = Column(String, nullable=True)
-
-
-class POIApplicationProcess(DBBase):
-    """
-    Database model for poi application process
-    """
-
-    __tablename__ = "poi_application_processes"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    poi_id = Column(Integer, ForeignKey("pois.id", ondelete="CASCADE"), nullable=False)
-    other_profile = Column(
-        String, default=encryption_manager.encrypt_boolean(False), nullable=False
-    )
-    employment = Column(
-        String, default=encryption_manager.encrypt_boolean(False), nullable=False
-    )
-    veteran_status = Column(
-        String, default=encryption_manager.encrypt_boolean(False), nullable=False
-    )
-    education = Column(
-        String, default=encryption_manager.encrypt_boolean(False), nullable=False
-    )
-    case_file = Column(
-        String, default=encryption_manager.encrypt_boolean(False), nullable=False
-    )
-    fingerprints = Column(
-        String, default=encryption_manager.encrypt_boolean(False), nullable=False
-    )
+    deleted_at = Column(DateTime(timezone=True), nullable=True)

@@ -1,4 +1,6 @@
-from sqlalchemy import Column, ForeignKey, Integer, String
+from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 
 from app.core.database import DBBase
 
@@ -13,10 +15,7 @@ class User(DBBase):
     id = Column(Integer, primary_key=True, autoincrement=True)
     badge_num = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
-    created_at = Column(String, nullable=False)
-
-    def __repr__(self):
-        return self.badge_num
+    created_at = Column(DateTime(timezone=True), default=datetime.now(), nullable=False)
 
 
 class LoginAttempt(DBBase):
@@ -28,8 +27,10 @@ class LoginAttempt(DBBase):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     badge_num = Column(String, nullable=False)
-    is_success = Column(String, nullable=False)
-    attempted_at = Column(String, nullable=False)
+    is_success = Column(Boolean, default=False, nullable=False)
+    attempted_at = Column(
+        DateTime(timezone=True), default=datetime.now(), nullable=False
+    )
 
 
 class AuditLog(DBBase):
@@ -46,4 +47,4 @@ class AuditLog(DBBase):
     resource = Column(String, nullable=False)
     action = Column(String, nullable=False)
     notes = Column(String, nullable=True)
-    created_at = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.now(), nullable=False)
