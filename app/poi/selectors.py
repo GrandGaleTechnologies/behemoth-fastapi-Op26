@@ -1,14 +1,15 @@
 # pylint: disable=redefined-builtin
-from datetime import datetime
+from datetime import datetime, tzinfo
 from typing import cast
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Query, Session
 
 from app.common.encryption import EncryptionManager
 from app.common.exceptions import InternalServerError
 from app.common.paginators import paginate
 from app.common.types import PaginationParamsType
-from app.common.utils import find_all_matches, get_last_day_of_month, paginate_list
+from app.common.utils import get_last_day_of_month
 from app.core.settings import get_settings
 from app.poi import models, utils
 from app.poi.crud import (
@@ -91,37 +92,10 @@ async def get_paginated_offense_list(pagination: PaginationParamsType, db: Sessi
     else:
         qs = qs.order_by(models.Offense.id.desc())
 
-    # Search
+    # Filter by q
     if pagination.q:
-        # Transformations
-        # Decrypted list
-        dec_all = qs.all()
-        for obj in dec_all:
-            obj.name = encryption_manager.decrypt_str(obj.name)  # type: ignore
+        qs = qs.filter(models.Offense.name.ilike(f"%{pagination.q}%"))
 
-        # Init objs
-        objs: list[models.Offense] = []
-
-        matches = await find_all_matches(
-            query=pagination.q.capitalize(),  # Capitalize to normalize with db items
-            options=[str(off.name) for off in dec_all],
-        )
-        for match in matches:
-            # Get matching obj
-            obj = [obj for obj in dec_all if bool(obj.name == match)][0]
-
-            # encrypt name again
-            obj.name = encryption_manager.encrypt_str(str(obj.name))  # type: ignore
-
-            # Append to list
-            objs.append(obj)
-
-        # Paginate
-        return paginate_list(
-            items=objs, page=pagination.page, size=pagination.size
-        ), len(objs)  # noqa
-
-    # Paginate qs
     results: list[models.Offense] = paginate(
         qs=qs, page=pagination.page, size=pagination.size
     )
@@ -153,7 +127,9 @@ async def get_paginated_poi_list(
 
     # init qs
     qs = cast(Query[models.POI], await poi_crud.get_all(return_qs=True))
-    qs = qs.order_by(models.POI.id.desc())
+
+    # Filter for deleted
+    qs = qs.filter_by(is_deleted=False)
 
     # order by
     if pagination.order_by == "asc":
@@ -163,102 +139,35 @@ async def get_paginated_poi_list(
 
     # Search by gsm
     if gsm:
-        results: list[models.POI] = []
+        gsm_qs = cast(Query[models.GSMNumber], await gsm_crud.get_all(return_qs=True))
 
-        # Filter for matching numbers
-        gsm_nums = cast(list[models.GSMNumber], await gsm_crud.get_all())
-        for num in gsm_nums:
-            if encryption_manager.decrypt_str(num.number).startswith(gsm):
-                results.append(
-                    cast(models.POI, await get_poi_by_id(id=num.poi_id, db=db))  # type: ignore
-                )
+        # Filter for similar nums
+        gsm_qs = gsm_qs.filter(
+            models.GSMNumber.number.ilike(f"%{gsm}%"),
+            models.GSMNumber.is_deleted.is_(False),
+        )
 
-        # Filter for deleted
-        results = [
-            obj
-            for obj in results
-            if not encryption_manager.decrypt_boolean(obj.is_deleted)
-        ]
-
-        # Check for pin status
-        if is_pinned is not None:
-            results = [
-                obj
-                for obj in qs.all()
-                if encryption_manager.decrypt_boolean(obj.is_pinned) == is_pinned
-                and not encryption_manager.decrypt_boolean(obj.is_deleted)
-            ]
-            paginated_results: list[models.POI] = paginate_list(
-                items=results, page=pagination.page, size=pagination.size
-            )
-            return paginated_results, len(results)
-
-        return results, qs.count()
+        # Check matching pois status
+        qs = qs.filter(models.POI.id.in_([gsm.poi_id for gsm in gsm_qs.all()]))
 
     # Search
     if pagination.q:
-        # Transformations
-        # Decrypted list
-        dec_all = qs.all()
-        for obj in dec_all:
-            obj.full_name = encryption_manager.decrypt_str(obj.full_name)  # type: ignore
-
-        # Init objs
-        objs: list[models.POI] = []
-
-        matches = await find_all_matches(
-            query=pagination.q.capitalize(),  # Capitalize to normalize with db items
-            options=[str(poi.full_name) for poi in dec_all],
+        # Perform search
+        qs = qs.filter(
+            or_(
+                models.POI.full_name.ilike(f"%{pagination.q}%"),
+                models.POI.alias.ilike(f"%{pagination.q}%"),
+            )
         )
 
-        for match in matches:
-            # Get matching obj
-            obj = [obj for obj in dec_all if bool(obj.full_name == match)][0]
+    # Check for pin status
+    if is_pinned in [True, False]:
+        qs = qs.filter_by(is_pinned=is_pinned)
 
-            # encrypt name and alias again
-            obj.full_name = encryption_manager.encrypt_str(obj.full_name)  # type: ignore
-
-            # Append to list
-            objs.append(obj)
-
-        # Check for pin status
-        if is_pinned is not None:
-            objs = [
-                obj
-                for obj in objs
-                if encryption_manager.decrypt_boolean(obj.is_pinned) == is_pinned
-                and not encryption_manager.decrypt_boolean(obj.is_deleted)
-            ]
-
-        # Paginate
-        paginated_objs = paginate_list(
-            items=objs, page=pagination.page, size=pagination.size
-        )
-
-        return paginated_objs, len(objs)  # noqa
-
-    # Paginate qs
+    # Paginate
     results: list[models.POI] = paginate(
         qs=qs, page=pagination.page, size=pagination.size
     )
-
-    # Filter for deleted
-    results = [
-        obj for obj in results if not encryption_manager.decrypt_boolean(obj.is_deleted)
-    ]
-
-    # Check for pin status
-    if is_pinned is not None:
-        results = [
-            obj
-            for obj in qs.all()
-            if encryption_manager.decrypt_boolean(obj.is_pinned) == is_pinned
-            and not encryption_manager.decrypt_boolean(obj.is_deleted)
-        ]
-        paginated_results: list[models.POI] = paginate_list(
-            items=results, page=pagination.page, size=pagination.size
-        )
-        return paginated_results, len(results)
 
     return results, qs.count()
 
@@ -289,7 +198,7 @@ async def get_poi_statistics(db: Session):
     objs: list[models.POI] = []
     for poi in qs.all():
         # Check: poi was not deleted
-        if encryption_manager.decrypt_boolean(data=poi.is_deleted):
+        if bool(poi.is_deleted):
             continue
 
         objs.append(poi)
@@ -315,9 +224,9 @@ async def get_poi_statistics(db: Session):
     # Get tno pois last month
     tno_pois_last_month = 0
     for poi in objs:
-        created_at = encryption_manager.decrypt_datetime(poi.created_at)
+        created_at = poi.created_at.replace(tzinfo=None)
 
-        if last_month_start <= created_at <= last_month_end:
+        if bool(last_month_start <= created_at <= last_month_end):
             tno_pois_last_month += 1
 
     # Get curr month range
@@ -331,7 +240,7 @@ async def get_poi_statistics(db: Session):
         [
             poi
             for poi in objs
-            if encryption_manager.decrypt_datetime(poi.created_at) > curr_month_start
+            if bool(poi.created_at.replace(tzinfo=None) > curr_month_start)
         ]
     )
 
@@ -342,18 +251,14 @@ async def get_poi_statistics(db: Session):
     for offense_name, value in top_offenses:
         top_convictions.append(
             {
-                "offense": encryption_manager.decrypt_str(offense_name),
+                "offense": (offense_name),
                 "value": value,
             }
         )
 
     # Get poi report on age range
     top_age_range = await utils.get_top_poi_age_ranges(
-        dob_list=[
-            encryption_manager.decrypt_date(data=str(poi.dob))
-            for poi in objs
-            if bool(poi.dob)
-        ]
+        dob_list=[poi.dob for poi in objs if bool(poi.dob)]  # type: ignore
     )
 
     return {
@@ -381,17 +286,12 @@ async def get_pinned_pois(db: Session):
     poi_crud = POICRUD(db=db)
 
     # init qs
-    qs = cast(list[models.POI], await poi_crud.get_all())
+    qs = cast(Query[models.POI], await poi_crud.get_all(return_qs=True))
 
-    # decrypt pin status
-    data = []
-    for obj in qs:
-        if encryption_manager.decrypt_boolean(
-            obj.is_pinned
-        ) and not encryption_manager.decrypt_boolean(obj.is_deleted):
-            data.append(obj)
+    # filter for pinned
+    qs = qs.filter_by(is_pinned=True)
 
-    return data
+    return qs.all()
 
 
 async def get_recently_added_pois(db: Session):
@@ -413,7 +313,7 @@ async def get_recently_added_pois(db: Session):
     return [
         obj
         for obj in qs.order_by(models.POI.id.desc()).all()
-        if not encryption_manager.decrypt_boolean(obj.is_deleted)
+        if not bool(obj.is_deleted)
     ]
 
 
@@ -441,7 +341,7 @@ async def get_poi_by_id(id: int, db: Session, raise_exc: bool = True):
         raise POINotFound()
 
     # Check if deleted
-    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+    if obj and bool(obj.is_deleted):
         raise POINotFound()
 
     return obj
@@ -471,7 +371,7 @@ async def get_poi_offense_by_id(id: int, db: Session, raise_exc: bool = True):
         raise POIOffenseNotFound()
 
     # Check if deleted
-    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+    if obj and bool(obj.is_deleted):
         raise POIOffenseNotFound()
 
     return obj
@@ -491,14 +391,9 @@ async def get_poi_offenses(poi: models.POI, db: Session):
     # Init crud
     poi_offense_crud = POIOffenseCRUD(db=db)
 
-    qs = cast(list[models.POIOffense], await poi_offense_crud.get_all())
+    qs = cast(Query[models.POIOffense], await poi_offense_crud.get_all(return_qs=True))
 
-    return [
-        obj
-        for obj in qs
-        if not encryption_manager.decrypt_boolean(obj.is_deleted)
-        and bool(obj.poi_id == poi.id)
-    ]
+    return qs.filter_by(poi_id=poi.id, is_deleted=False)
 
 
 async def get_id_doc_by_id(id: int, db: Session, raise_exc: bool = True):
@@ -522,7 +417,7 @@ async def get_id_doc_by_id(id: int, db: Session, raise_exc: bool = True):
         raise IDDocumentNotFound()
 
     # Check if deleted
-    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+    if obj and bool(obj.is_deleted):
         raise IDDocumentNotFound()
 
     return obj
@@ -542,14 +437,9 @@ async def get_id_documents(poi: models.POI, db: Session):
     # Init crud
     doc_crud = IDDocumentCRUD(db=db)
 
-    qs = cast(list[models.IDDocument], await doc_crud.get_all())
+    qs = cast(Query[models.IDDocument], await doc_crud.get_all(return_qs=True))
 
-    return [
-        obj
-        for obj in qs
-        if not encryption_manager.decrypt_boolean(obj.is_deleted)
-        and bool(obj.poi_id == poi.id)
-    ]
+    return qs.filter_by(poi_id=poi.id, is_deleted=False)
 
 
 async def get_gsm_by_id(id: int, db: Session, raise_exc: bool = True):
@@ -576,7 +466,7 @@ async def get_gsm_by_id(id: int, db: Session, raise_exc: bool = True):
         raise GSMNumberNotFound()
 
     # Check if deleted
-    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+    if obj and bool(obj.is_deleted):
         raise GSMNumberNotFound()
 
     return obj
@@ -596,14 +486,9 @@ async def get_gsm_numbers(poi: models.POI, db: Session):
     # Init crud
     gsm_crud = GSMNumberCRUD(db=db)
 
-    qs = cast(list[models.GSMNumber], await gsm_crud.get_all())
+    qs = cast(Query[models.GSMNumber], await gsm_crud.get_all(return_qs=True))
 
-    return [
-        obj
-        for obj in qs
-        if not encryption_manager.decrypt_boolean(obj.is_deleted)
-        and bool(obj.poi_id == poi.id)
-    ]
+    return qs.filter_by(poi_id=poi.id, is_deleted=False)
 
 
 async def get_residential_address_by_id(id: int, db: Session, raise_exc: bool = True):
@@ -630,7 +515,7 @@ async def get_residential_address_by_id(id: int, db: Session, raise_exc: bool = 
         raise ResidentialAddressNotFound()
 
     # Check deleted
-    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+    if obj and bool(obj.is_deleted):
         raise ResidentialAddressNotFound()
 
     return obj
@@ -650,14 +535,11 @@ async def get_residential_addresses(poi: models.POI, db: Session):
     # Init crud
     address_crud = ResidentialAddressCRUD(db=db)
 
-    qs = cast(list[models.ResidentialAddress], await address_crud.get_all())
+    qs = cast(
+        Query[models.ResidentialAddress], await address_crud.get_all(return_qs=True)
+    )
 
-    return [
-        obj
-        for obj in qs
-        if not encryption_manager.decrypt_boolean(obj.is_deleted)
-        and bool(obj.poi_id == poi.id)
-    ]
+    return qs.filter_by(poi_id=poi.id, is_deleted=False)
 
 
 async def get_known_associate_by_id(id: int, db: Session, raise_exc: bool = True):
@@ -684,7 +566,7 @@ async def get_known_associate_by_id(id: int, db: Session, raise_exc: bool = True
         raise KnownAssociateNotFound()
 
     # Check if deleted
-    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+    if obj and bool(obj.is_deleted):
         raise KnownAssociateNotFound()
 
     return obj
@@ -704,14 +586,11 @@ async def get_known_associates(poi: models.POI, db: Session):
     # Init crud
     associate_crud = KnownAssociateCRUD(db=db)
 
-    qs = cast(list[models.KnownAssociate], await associate_crud.get_all())
+    qs = cast(
+        Query[models.KnownAssociate], await associate_crud.get_all(return_qs=True)
+    )
 
-    return [
-        obj
-        for obj in qs
-        if not encryption_manager.decrypt_boolean(obj.is_deleted)
-        and bool(obj.poi_id == poi.id)
-    ]
+    return qs.filter_by(poi_id=poi.id, is_deleted=False)
 
 
 async def get_employment_history_by_id(id: int, db: Session, raise_exc: bool = True):
@@ -738,7 +617,7 @@ async def get_employment_history_by_id(id: int, db: Session, raise_exc: bool = T
         raise EmploymentHistoryNotFound()
 
     # Check if deleted
-    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+    if obj and bool(obj.is_deleted):
         raise EmploymentHistoryNotFound()
 
     return obj
@@ -758,14 +637,11 @@ async def get_employment_history(poi: models.POI, db: Session):
     # Init crud
     history_crud = EmploymentHistoryCRUD(db=db)
 
-    qs = cast(list[models.EmploymentHistory], await history_crud.get_all())
+    qs = cast(
+        Query[models.EmploymentHistory], await history_crud.get_all(return_qs=True)
+    )
 
-    return [
-        obj
-        for obj in qs
-        if not encryption_manager.decrypt_boolean(obj.is_deleted)
-        and bool(obj.poi_id == poi.id)
-    ]
+    return qs.filter_by(poi_id=poi.id, is_deleted=False)
 
 
 async def get_veteran_status_by_poi(
@@ -825,7 +701,7 @@ async def get_educational_background_by_id(
         raise EducationalBackgroundNotFound()
 
     # Check if deleted
-    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+    if obj and bool(obj.is_deleted):
         raise EducationalBackgroundNotFound()
 
     return obj
@@ -845,14 +721,12 @@ async def get_educational_background(poi: models.POI, db: Session):
     # Init crud
     education_crud = EducationalBackgroundCRUD(db=db)
 
-    qs = cast(list[models.EducationalBackground], await education_crud.get_all())
+    qs = cast(
+        Query[models.EducationalBackground],
+        await education_crud.get_all(return_qs=True),
+    )
 
-    return [
-        obj
-        for obj in qs
-        if not encryption_manager.decrypt_boolean(obj.is_deleted)
-        and bool(obj.poi_id == poi.id)
-    ]
+    return qs.filter_by(poi_id=poi.id, is_deleted=False)
 
 
 async def get_frequented_spot_by_id(id: int, db: Session, raise_exc: bool = True):
@@ -879,7 +753,7 @@ async def get_frequented_spot_by_id(id: int, db: Session, raise_exc: bool = True
         raise FrequentedSpotNotFound()
 
     # Check if deleted
-    if obj and encryption_manager.decrypt_boolean(obj.is_deleted):
+    if obj and bool(obj.is_deleted):
         raise FrequentedSpotNotFound()
 
     return obj
@@ -899,11 +773,6 @@ async def get_frequented_spots(poi: models.POI, db: Session):
     # Init crud
     spot_crud = FrequentedSpotCRUD(db=db)
 
-    qs = cast(list[models.FrequentedSpot], await spot_crud.get_all())
+    qs = cast(Query[models.FrequentedSpot], await spot_crud.get_all(return_qs=True))
 
-    return [
-        obj
-        for obj in qs
-        if not encryption_manager.decrypt_boolean(obj.is_deleted)
-        and bool(obj.poi_id == poi.id)
-    ]
+    return qs.filter_by(poi_id=poi.id, is_deleted=False)

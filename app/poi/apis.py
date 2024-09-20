@@ -4,8 +4,6 @@ from typing import cast
 from fastapi import APIRouter, status
 
 from app.common.annotations import DatabaseSession, PaginationParams
-from app.common.encryption import EncryptionManager
-from app.common.exceptions import NotFound
 from app.common.paginators import get_pagination_metadata
 from app.core.settings import get_settings
 from app.core.tags import get_tags
@@ -17,7 +15,6 @@ from app.poi.formatters import (
     format_gsm,
     format_id_document,
     format_known_associate,
-    format_poi_application,
     format_poi_base,
     format_poi_offense,
     format_poi_summary,
@@ -33,33 +30,9 @@ from app.user.services import create_log
 router = APIRouter()
 tags = get_tags()
 settings = get_settings()
-encrypt_man = EncryptionManager(key=settings.ENCRYPTION_KEY)
 
 # Include routers
 router.include_router(poi_offense_router, prefix="/offense", tags=["Offense Endpoints"])
-
-
-@router.get(
-    "/{poi_id}/application",
-    summary="Get POI Application Progress",
-    response_description="The details of the application process",
-    status_code=status.HTTP_200_OK,
-    response_model=response.POIApplicationProcessResponse,
-)
-async def route_poi_application_process(
-    poi_id: int, _: CurrentUser, db: DatabaseSession
-):
-    """
-    This endpoint returns the poi's application process
-    """
-
-    # Get poi
-    poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
-
-    if not poi.application:
-        raise NotFound("POI Application not found")
-
-    return {"data": await format_poi_application(application=poi.application)}
 
 
 @router.post(
@@ -81,9 +54,7 @@ async def route_poi_create(
     # Create poi base information
     poi = await services.create_poi(user=curr_user, data=poi_in, db=db)
 
-    # Start application process
-    # await services.create_poi_application_process(poi=poi, db=db)
-
+    print(poi.pfp_url)
     return {"data": await format_poi_base(poi=poi)}
 
 
@@ -114,7 +85,7 @@ async def route_poi_list(
         db=db,
     )
 
-    # get offenses
+    # get pois
     pois, tnoi = await selectors.get_paginated_poi_list(
         gsm=gsm, is_pinned=is_pinned, pagination=pagination, db=db
     )
@@ -149,14 +120,12 @@ async def route_poi_pin_toggle(
     poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
 
     # Toggle pin
-    if encrypt_man.decrypt_boolean(poi.is_pinned):
+    if bool(poi.is_pinned):
         stat = "POI Successfully Unpinned"
     else:
         stat = "POI Succcessfully Pinned"
 
-    poi.is_pinned = encrypt_man.encrypt_boolean(  # type: ignore
-        not encrypt_man.decrypt_boolean(poi.is_pinned)
-    )
+    poi.is_pinned = not poi.is_pinned  # type: ignore
     db.commit()
 
     # Create logs
@@ -222,8 +191,8 @@ async def route_poi_delete(poi_id: int, curr_user: CurrentUser, db: DatabaseSess
     poi = cast(models.POI, await selectors.get_poi_by_id(id=poi_id, db=db))
 
     # Delete doc
-    poi.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
-    poi.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    poi.is_deleted = True  # type: ignore
+    poi.deleted_at = datetime.now()  # type: ignore
     db.commit()
 
     # NOTE: Mark other items like id-doc, etc as deleted
@@ -375,8 +344,8 @@ async def route_poi_id_doc_delete(
     doc = cast(models.IDDocument, await selectors.get_id_doc_by_id(id=doc_id, db=db))
 
     # Delete doc
-    doc.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
-    doc.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    doc.is_deleted = True  # type: ignore
+    doc.deleted_at = datetime.now()  # type: ignore
     db.commit()
 
     # Create logs
@@ -453,7 +422,7 @@ async def route_poi_gsm_list(poi_id: int, curr_user: CurrentUser, db: DatabaseSe
 
 
 @router.put(
-    "/gsm/{gsm_id}",
+    "/gsm/{gsm_id}/",
     summary="Edit GSM Number",
     response_description="The edited gsm number",
     status_code=status.HTTP_200_OK,
@@ -498,8 +467,8 @@ async def route_poi_gsm_delete(
     gsm = cast(models.GSMNumber, await selectors.get_gsm_by_id(id=gsm_id, db=db))
 
     # Delete gsm
-    gsm.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
-    gsm.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    gsm.is_deleted = True  # type: ignore
+    gsm.deleted_at = datetime.now()  # type: ignore
     db.commit()
 
     # Create logs
@@ -630,8 +599,8 @@ async def route_poi_address_delete(
     )
 
     # Delete address
-    address.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
-    address.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    address.is_deleted = True  # type: ignore
+    address.deleted_at = datetime.now()  # type: ignore
     db.commit()
 
     # Create logs
@@ -765,8 +734,8 @@ async def route_poi_assicate_delete(
     )
 
     # Delete address
-    associate.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
-    associate.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    associate.is_deleted = True  # type: ignore
+    associate.deleted_at = datetime.now()  # type: ignore
     db.commit()
 
     # Create logs
@@ -900,8 +869,8 @@ async def route_poi_employment_delete(
     )
 
     # Delete employment history
-    history.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
-    history.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    history.is_deleted = True  # type: ignore
+    history.deleted_at = datetime.now()  # type: ignore
     db.commit()
 
     # Create logs
@@ -1105,8 +1074,8 @@ async def route_poi_education_delete(
     )
 
     # Delete educational background
-    education.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
-    education.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    education.is_deleted = True  # type: ignore
+    education.deleted_at = datetime.now()  # type: ignore
     db.commit()
 
     # Create logs
@@ -1246,8 +1215,8 @@ async def route_poi_conviction_delete(
     )
 
     # Delete poi offense
-    poi_offense.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
-    poi_offense.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    poi_offense.is_deleted = True  # type: ignore
+    poi_offense.deleted_at = datetime.now()  # type: ignore
     db.commit()
 
     # Create logs
@@ -1379,8 +1348,8 @@ async def route_poi_spot_delete(
     )
 
     # Delete frequented spot
-    spot.is_deleted = encrypt_man.encrypt_boolean(True)  # type: ignore
-    spot.deleted_at = encrypt_man.encrypt_datetime(datetime.now())  # type: ignore
+    spot.is_deleted = True  # type: ignore
+    spot.deleted_at = datetime.now()  # type: ignore
     db.commit()
 
     # Create logs

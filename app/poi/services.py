@@ -2,12 +2,10 @@ import base64
 import binascii
 import os
 import random
-from datetime import datetime
 
 import aiofiles
 from sqlalchemy.orm import Session
 
-from app.common.encryption import EncryptionManager
 from app.common.exceptions import BadRequest, InternalServerError
 from app.common.utils import dict_to_string
 from app.core.settings import get_settings
@@ -21,37 +19,16 @@ from app.poi.crud import (
     IDDocumentCRUD,
     KnownAssociateCRUD,
     OffenseCRUD,
-    POIApplicationProcess,
     POIOffenseCRUD,
     ResidentialAddressCRUD,
     VeteranStatusCRUD,
 )
 from app.poi.schemas import create, edit
 from app.user import models as user_models
-from app.user.crud import AuditLogCRUD
 from app.user.services import create_log
 
 # Global
 settings = get_settings()
-encryption_manager = EncryptionManager(key=settings.ENCRYPTION_KEY)
-encrypt_man_dict = {
-    "str": {
-        "enc": encryption_manager.encrypt_str,
-        "dec": encryption_manager.decrypt_str,
-    },
-    "date": {
-        "enc": encryption_manager.encrypt_date,
-        "dec": encryption_manager.decrypt_date,
-    },
-    "time": {
-        "enc": encryption_manager.encrypt_time,
-        "dec": encryption_manager.decrypt_time,
-    },
-    "bool": {
-        "enc": encryption_manager.encrypt_boolean,
-        "dec": encryption_manager.decrypt_boolean,
-    },
-}
 
 
 async def create_offense(
@@ -73,36 +50,25 @@ async def create_offense(
     """
     # Init CRUD
     offense_crud = OffenseCRUD(db=db)
-    audit_crud = AuditLogCRUD(db=db)
 
     # Transformations
     data.name = data.name.capitalize()
 
     # Check: unique offense
-    if data.name in [
-        encryption_manager.decrypt_str(data=off.name)
-        for off in await offense_crud.get_all()
-    ]:
+    if await offense_crud.get(name=data.name):
         raise BadRequest("Offense already exists")
 
     # Create offense
     obj = await offense_crud.create(
         data={
-            "name": encryption_manager.encrypt_str(data=data.name),
-            "description": encryption_manager.encrypt_str(data=data.description),
-            "created_at": encryption_manager.encrypt_datetime(dt=datetime.now()),
+            "name": data.name,
+            "description": data.description,
         }
     )
 
     # Create log
-    await audit_crud.create(
-        data={
-            "user_id": user.id,
-            "resource": encryption_manager.encrypt_str(data="offenses"),
-            "action": encryption_manager.encrypt_str(data="create"),
-            "notes": encryption_manager.encrypt_str(data=data.name),
-            "created_at": encryption_manager.encrypt_datetime(dt=datetime.now()),
-        }
+    await create_log(
+        user=user, resource="offense", action=f"create:{obj.id}", notes=data.name, db=db
     )
 
     return obj
@@ -130,16 +96,14 @@ async def edit_offense(
     changelog = ""
 
     # Check: name change
-    offense_name = encryption_manager.decrypt_str(data=offense.name)
-    if offense_name != data.name:
-        changelog += f"- {offense_name} -> {data.name}\n"
-        offense.name = encryption_manager.encrypt_str(data.name)  # type: ignore
+    if bool(offense.name != data.name):
+        changelog += f"- {offense.name} -> {data.name}\n"
+        offense.name = data.name  # type: ignore
 
     # Check: description change
-    offense_description = encryption_manager.decrypt_str(data=offense.description)
-    if offense_description != data.description:
-        changelog += f"- {offense_description} -> {data.description}"
-        offense.description = encryption_manager.encrypt_str(data.description)  # type: ignore
+    if bool(offense.description != data.description):
+        changelog += f"- {offense.description} -> {data.description}"
+        offense.description = data.description  # type: ignore
 
     # Save changes
     db.commit()
@@ -177,39 +141,13 @@ async def create_poi(user: user_models.User, data: create.POICreate, db: Session
     # list for del
     created_objs = []
 
-    # encrypt data
-    encrypted_poi = {
-        "full_name": encryption_manager.encrypt_str(data.full_name.capitalize()),
-        "alias": encryption_manager.encrypt_str(data.alias.capitalize()),
-        "dob": encryption_manager.encrypt_date(data.dob) if data.dob else None,
-        "pob": encryption_manager.encrypt_str(data.pob) if data.pob else None,
-        "nationality": encryption_manager.encrypt_str(data.nationality)
-        if data.nationality
-        else None,
-        "religion": encryption_manager.encrypt_str(data.religion)
-        if data.religion
-        else None,
-        "political_affiliation": encryption_manager.encrypt_str(
-            data.political_affiliation
-        )
-        if data.political_affiliation
-        else None,
-        "tribal_union": encryption_manager.encrypt_str(data.tribal_union)
-        if data.tribal_union
-        else None,
-        "last_seen_date": encryption_manager.encrypt_date(data.last_seen_date)
-        if data.last_seen_date
-        else None,
-        "last_seen_time": encryption_manager.encrypt_time(data.last_seen_time)
-        if data.last_seen_time
-        else None,
-        "is_completed": encryption_manager.encrypt_boolean(data=False),
-        "notes": encryption_manager.encrypt_str(data.notes) if data.notes else None,
-    }
-
     try:
         # Create poi
-        poi = await poi_crud.create(data=encrypted_poi)
+        poi = await poi_crud.create(
+            data=create.CreatePOIBaseInformation(**data.model_dump()).model_dump(
+                exclude=["pfp", "id_documents"]  # type: ignore
+            )
+        )
         created_objs.append(poi)
 
         # Create veteran status
@@ -223,9 +161,10 @@ async def create_poi(user: user_models.User, data: create.POICreate, db: Session
         if data.pfp:
             # Decode string
             try:
-                img_data = base64.b64decode(data.pfp)
+                base64_str = data.pfp.split(",", 1)[1]
+                img_data = base64.b64decode(base64_str)
             except binascii.Error:
-                raise BadRequest("Invalid pfp url bytes", loc=["body", "pfp"])
+                raise BadRequest("Invalid pfp format", loc=["body", "pfp"])
 
             # Save data to file
             loc = f"{settings.UPLOAD_DIR}/poi/{poi.id}/pfp/pfp_{random.randint(1, 50)}.jpeg"
@@ -235,7 +174,7 @@ async def create_poi(user: user_models.User, data: create.POICreate, db: Session
                 await file.write(img_data)
 
             # Set url
-            poi.pfp_url = encryption_manager.encrypt_str(file.name)  # type: ignore
+            poi.pfp_url = file.name  # type: ignore
             db.commit()
 
         # Create ID documents
@@ -307,7 +246,7 @@ async def create_poi(user: user_models.User, data: create.POICreate, db: Session
                     await create_frequented_spot(user=user, poi=poi, data=spot, db=db)
                 )
     except Exception as e:
-        for obj in created_objs[:-1]:
+        for obj in created_objs[::-1]:
             db.delete(obj)
         db.commit()
 
@@ -354,17 +293,15 @@ async def edit_poi(
     # edit info
     poi_dict = poi.__dict__
     for field, value in data.model_dump(exclude=["pfp"], exclude_none=True).items():  # type: ignore
-        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
-        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+        if poi_dict[field] and poi_dict[field] != value:
+            changelog += f"- {poi_dict[field]} -> {value}\n"
 
-        if poi_dict[field] and dec(poi_dict[field]) != value:
-            changelog += f"- {dec(poi_dict[field])} -> {value}\n"
+            setattr(poi, field, value)
 
-            setattr(poi, field, enc(value))
         elif not poi_dict[field] and value:
             changelog += f"- {poi_dict[field]} -> {value}\n"
 
-            setattr(poi, field, enc(value))
+            setattr(poi, field, value)
 
     # Create file for pfp
     if data.pfp:
@@ -382,7 +319,7 @@ async def edit_poi(
             await file.write(img_data)
 
         # Set url
-        poi.pfp_url = encryption_manager.encrypt_str(file.name)  # type: ignore
+        poi.pfp_url = file.name  # type: ignore
 
     # Save changes
     db.commit()
@@ -397,26 +334,6 @@ async def edit_poi(
     )
 
     return poi
-
-
-async def create_poi_application_process(poi: models.POI, db: Session):
-    """
-    Create poi application process
-
-    Args:
-        poi (models.POI): The poi obj
-        db (Session): The database session
-
-    Returns:
-        models.POIApplicationProcess
-    """
-    # Init crud
-    application_crud = POIApplicationProcess(db=db)
-
-    # Create application process
-    application_process = await application_crud.create(data={"poi_id": poi.id})
-
-    return application_process
 
 
 ########################################################################
@@ -440,16 +357,7 @@ async def create_id_doc(
     # Init crud
     doc_crud = IDDocumentCRUD(db=db)
 
-    # Create ID Doc
-    enc = encrypt_man_dict["str"]["enc"]
-
-    doc = await doc_crud.create(
-        data={
-            "poi_id": poi.id,
-            "type": enc(data.type),
-            "id_number": enc(data.id_number),
-        }
-    )
+    doc = await doc_crud.create(data={"poi_id": poi.id, **data.model_dump()})
 
     # Create logs
     await create_log(
@@ -485,13 +393,10 @@ async def edit_id_doc(
 
     doc_dict = doc.__dict__
     for field, value in data.model_dump().items():
-        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
-        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+        if doc_dict[field] != value:
+            changelog += f"- {doc_dict[field]} -> {value}\n"
 
-        if dec(doc_dict[field]) != value:
-            changelog += f"- {dec(doc_dict[field])} -> {value}\n"
-
-            setattr(doc, field, enc(value))
+            setattr(doc, field, value)
 
     # Save changes
     db.commit()
@@ -530,20 +435,7 @@ async def create_gsm_number(
     gsm_crud = GSMNumberCRUD(db=db)
 
     # Create gsm number
-    enc = encrypt_man_dict["str"]["enc"]
-    obj = await gsm_crud.create(
-        data={
-            "poi_id": poi.id,
-            "service_provider": enc(data.service_provider),
-            "number": enc(data.number),
-            "last_call_date": encryption_manager.encrypt_date(data.last_call_date)
-            if data.last_call_date
-            else None,
-            "last_call_time": encryption_manager.encrypt_time(data.last_call_time)
-            if data.last_call_time
-            else None,
-        }
-    )
+    obj = await gsm_crud.create(data={"poi_id": poi.id, **data.model_dump()})
 
     # Create logs
     await create_log(
@@ -576,17 +468,15 @@ async def edit_gsm(
 
     gsm_dict = gsm.__dict__
     for field, value in data.model_dump(exclude=["pfp"], exclude_none=True).items():  # type: ignore
-        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
-        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+        if gsm_dict[field] and gsm_dict[field] != value:
+            changelog += f"- {gsm_dict[field]} -> {value}\n"
 
-        if gsm_dict[field] and dec(gsm_dict[field]) != value:
-            changelog += f"- {dec(gsm_dict[field])} -> {value}\n"
+            setattr(gsm, field, value)
 
-            setattr(gsm, field, enc(value))
         elif not gsm_dict[field] and value:
             changelog += f"- {gsm_dict[field]} -> {value}\n"
 
-            setattr(gsm, field, enc(value))
+            setattr(gsm, field, value)
 
     # Save changes
     db.commit()
@@ -628,16 +518,7 @@ async def create_residential_address(
     address_crud = ResidentialAddressCRUD(db=db)
 
     # Create address
-    enc = encrypt_man_dict["str"]["enc"]
-    obj = await address_crud.create(
-        data={
-            "poi_id": poi.id,
-            "country": enc(data.country),
-            "state": enc(data.state),
-            "city": enc(data.city),
-            "address": enc(data.address) if data.address else None,
-        }
-    )
+    obj = await address_crud.create(data={"poi_id": poi.id, **data.model_dump()})
 
     # Create logs
     await create_log(
@@ -673,17 +554,15 @@ async def edit_residential_address(
 
     address_dict = address.__dict__
     for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
-        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
-        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+        if address_dict[field] and address_dict[field] != value:
+            changelog += f"- {address_dict[field]} -> {value}\n"
 
-        if address_dict[field] and dec(address_dict[field]) != value:
-            changelog += f"- {dec(address_dict[field])} -> {value}\n"
+            setattr(address, field, value)
 
-            setattr(address, field, enc(value))
         elif not address_dict[field] and value:
             changelog += f"- {address_dict[field]} -> {value}\n"
 
-            setattr(address, field, enc(value))
+            setattr(address, field, value)
 
     # Save changes
     db.commit()
@@ -725,27 +604,7 @@ async def create_known_associate(
     associate_crud = KnownAssociateCRUD(db=db)
 
     # Create known associates
-    enc_str = encrypt_man_dict["str"]["enc"]
-    enc_date = encrypt_man_dict["date"]["enc"]
-    enc_time = encrypt_man_dict["time"]["enc"]
-    obj = await associate_crud.create(
-        data={
-            "poi_id": poi.id,
-            "full_name": enc_str(data.full_name),
-            "known_gsm_numbers": enc_str(data.known_gsm_numbers),
-            "relationship": enc_str(data.relationship),
-            "occupation": enc_str(data.occupation) if data.occupation else None,
-            "residential_address": enc_str(data.residential_address)
-            if data.residential_address
-            else None,
-            "last_seen_date": enc_date(data.last_seen_date)
-            if data.last_seen_date
-            else None,
-            "last_seen_time": enc_time(data.last_seen_time)
-            if data.last_seen_time
-            else None,
-        }
-    )
+    obj = await associate_crud.create(data={"poi_id": poi.id, **data.model_dump()})
 
     # Create logs
     await create_log(
@@ -781,17 +640,14 @@ async def edit_known_associate(
 
     address_dict = associate.__dict__
     for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
-        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
-        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+        if address_dict[field] and address_dict[field] != value:
+            changelog += f"- {address_dict[field]} -> {value}\n"
 
-        if address_dict[field] and dec(address_dict[field]) != value:
-            changelog += f"- {dec(address_dict[field])} -> {value}\n"
-
-            setattr(associate, field, enc(value))
+            setattr(associate, field, value)
         elif not address_dict[field] and value:
             changelog += f"- {address_dict[field]} -> {value}\n"
 
-            setattr(associate, field, enc(value))
+            setattr(associate, field, value)
 
     # Save changes
     db.commit()
@@ -835,21 +691,7 @@ async def create_employment_history(
     employment_crud = EmploymentHistoryCRUD(db=db)
 
     # create obj
-    enc_str = encrypt_man_dict["str"]["enc"]
-    enc_date = encrypt_man_dict["date"]["enc"]
-    enc_bool = encrypt_man_dict["bool"]["enc"]
-
-    obj = await employment_crud.create(
-        data={
-            "poi_id": poi.id,
-            "company": enc_str(data.company),
-            "employment_type": enc_str(data.employment_type),
-            "from_date": enc_date(data.from_date) if data.from_date else None,
-            "to_date": enc_date(data.to_date) if data.to_date else None,
-            "current_job": enc_bool(data.current_job),
-            "description": enc_str(data.description) if data.description else None,
-        }
-    )
+    obj = await employment_crud.create(data={"poi_id": poi.id, **data.model_dump()})
 
     # Create logs
     await create_log(
@@ -885,17 +727,15 @@ async def edit_employment_history(
 
     history_dict = history.__dict__
     for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
-        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
-        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+        if history_dict[field] and history_dict[field] != value:
+            changelog += f"- {history_dict[field]} -> {value}\n"
 
-        if history_dict[field] and dec(history_dict[field]) != value:
-            changelog += f"- {dec(history_dict[field])} -> {value}\n"
+            setattr(history, field, value)
 
-            setattr(history, field, enc(value))
         elif not history_dict[field] and value:
             changelog += f"- {history_dict[field]} -> {value}\n"
 
-            setattr(history, field, enc(value))
+            setattr(history, field, value)
 
     # Save changes
     db.commit()
@@ -946,25 +786,7 @@ async def create_veteran_status(
         )
 
     # Create obj
-    enc_str = encrypt_man_dict["str"]["enc"]
-    enc_bool = encrypt_man_dict["bool"]["enc"]
-    enc_date = encrypt_man_dict["date"]["enc"]
-
-    obj = await veteran_crud.create(
-        data={
-            "poi_id": poi.id,
-            "is_veteran": enc_bool(data.is_veteran),
-            "section": enc_str(data.section),
-            "location": enc_str(data.location),
-            "id_card": enc_str(data.id_card) if data.id_card else None,
-            "id_card_issuer": enc_str(data.id_card_issuer)
-            if data.id_card_issuer
-            else None,
-            "from_date": enc_date(data.from_date) if data.from_date else None,
-            "to_date": enc_date(data.to_date) if data.to_date else None,
-            "notes": enc_str(data.notes) if data.notes else None,
-        }
-    )
+    obj = await veteran_crud.create(data={"poi_id": poi.id, **data.model_dump()})
 
     # Create logs
     await create_log(
@@ -1000,17 +822,15 @@ async def edit_veteran_status(
 
     status_dict = status.__dict__
     for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
-        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
-        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+        if status_dict[field] and status_dict[field] != value:
+            changelog += f"- {status_dict[field]} -> {value}\n"
 
-        if status_dict[field] and dec(status_dict[field]) != value:
-            changelog += f"- {dec(status_dict[field])} -> {value}\n"
+            setattr(status, field, value)
 
-            setattr(status, field, enc(value))
         elif not status_dict[field] and value:
             changelog += f"- {status_dict[field]} -> {value}\n"
 
-            setattr(status, field, enc(value))
+            setattr(status, field, value)
 
     # Save changes
     db.commit()
@@ -1052,21 +872,7 @@ async def create_educational_background(
     background_crud = EducationalBackgroundCRUD(db=db)
 
     # create educatonal background
-    enc_str = encrypt_man_dict["str"]["enc"]
-    enc_date = encrypt_man_dict["date"]["enc"]
-    enc_bool = encrypt_man_dict["bool"]["enc"]
-    obj = await background_crud.create(
-        data={
-            "poi_id": poi.id,
-            "type": enc_str(data.type),
-            "institute_name": enc_str(data.institute_name),
-            "country": enc_str(data.country),
-            "state": enc_str(data.state),
-            "from_date": enc_date(data.from_date) if data.from_date else None,
-            "to_date": enc_date(data.to_date) if data.to_date else None,
-            "current_institute": enc_bool(data.current_institute),
-        }
-    )
+    obj = await background_crud.create(data={"poi_id": poi.id, **data.model_dump()})
 
     # Create logs
     await create_log(
@@ -1101,17 +907,15 @@ async def edit_educational_background(
 
     education_dict = education.__dict__
     for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
-        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
-        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+        if education_dict[field] and education_dict[field] != value:
+            changelog += f"- {education_dict[field]} -> {value}\n"
 
-        if education_dict[field] and dec(education_dict[field]) != value:
-            changelog += f"- {dec(education_dict[field])} -> {value}\n"
+            setattr(education, field, value)
 
-            setattr(education, field, enc(value))
         elif not education_dict[field] and value:
             changelog += f"- {education_dict[field]} -> {value}\n"
 
-            setattr(education, field, enc(value))
+            setattr(education, field, value)
 
     # Save changes
     db.commit()
@@ -1155,19 +959,8 @@ async def create_poi_offense(
     poi_offense_crud = POIOffenseCRUD(db=db)
 
     # create conviction
-    enc_str = encrypt_man_dict["str"]["enc"]
-    enc_date = encrypt_man_dict["date"]["enc"]
-
     obj = await poi_offense_crud.create(
-        data={
-            "poi_id": poi.id,
-            "offense_id": offense.id,
-            "case_id": enc_str(data.case_id) if data.case_id else None,
-            "date_convicted": enc_date(data.date_convicted)
-            if data.date_convicted
-            else None,
-            "notes": enc_str(data.notes) if data.notes else None,
-        }
+        data={"poi_id": poi.id, "offense_id": offense.id, **data.model_dump()}
     )
 
     # Create logs
@@ -1204,17 +997,15 @@ async def edit_poi_offense(
 
     poi_offense_dict = poi_offense.__dict__
     for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
-        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
-        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+        if poi_offense_dict[field] and poi_offense_dict[field] != value:
+            changelog += f"- {poi_offense_dict[field]} -> {value}\n"
 
-        if poi_offense_dict[field] and dec(poi_offense_dict[field]) != value:
-            changelog += f"- {dec(poi_offense_dict[field])} -> {value}\n"
+            setattr(poi_offense, field, value)
 
-            setattr(poi_offense, field, enc(value))
         elif not poi_offense_dict[field] and value:
             changelog += f"- {poi_offense_dict[field]} -> {value}\n"
 
-            setattr(poi_offense, field, enc(value))
+            setattr(poi_offense, field, value)
 
     # Save changes
     db.commit()
@@ -1256,21 +1047,7 @@ async def create_frequented_spot(
     spot_crud = FrequentedSpotCRUD(db=db)
 
     # create spot
-    enc_str = encrypt_man_dict["str"]["enc"]
-    enc_date = encrypt_man_dict["date"]["enc"]
-
-    obj = await spot_crud.create(
-        data={
-            "poi_id": poi.id,
-            "country": enc_str(data.country),
-            "state": enc_str(data.state),
-            "lga": enc_str(data.lga),
-            "address": enc_str(data.address),
-            "from_date": enc_date(data.from_date) if data.from_date else None,
-            "to_date": enc_date(data.to_date) if data.to_date else None,
-            "notes": enc_str(data.notes) if data.notes else None,
-        }
-    )
+    obj = await spot_crud.create(data={"poi_id": poi.id, **data.model_dump()})
 
     # Create logs
     await create_log(
@@ -1306,17 +1083,14 @@ async def edit_frequented_spot(
 
     spot_dict = spot.__dict__
     for field, value in data.model_dump(exclude_none=True).items():  # type: ignore
-        enc = encrypt_man_dict[str(type(value).__name__)]["enc"]
-        dec = encrypt_man_dict[str(type(value).__name__)]["dec"]
+        if spot_dict[field] and spot_dict[field] != value:
+            changelog += f"- {spot_dict[field]} -> {value}\n"
 
-        if spot_dict[field] and dec(spot_dict[field]) != value:
-            changelog += f"- {dec(spot_dict[field])} -> {value}\n"
-
-            setattr(spot, field, enc(value))
+            setattr(spot, field, value)
         elif not spot_dict[field] and value:
             changelog += f"- {spot_dict[field]} -> {value}\n"
 
-            setattr(spot, field, enc(value))
+            setattr(spot, field, value)
 
     # Save changes
     db.commit()

@@ -59,7 +59,7 @@ class POI(BaseModel):
     is_pinned: bool = Field(description="Pinned status")
 
     @field_validator("pfp_url", mode="before")
-    def val_pfp_url(cls, v: str | None):
+    def val_pfp_url(cls, v: str | None):  # type: ignore
         """
         Field validator for pfp_url
 
@@ -69,32 +69,6 @@ class POI(BaseModel):
         if v:
             return settings.PUBLIC_URL + v
         return v
-
-
-class POIApplicationProcess(BaseModel):
-    """
-    Base schema for poi application process
-    """
-
-    id: int = Field(description="The ID of the application proces")
-    other_profile: bool = Field(
-        description="Indicates if poi application has reached the other_profile section"
-    )
-    employment: bool = Field(
-        description="Indicates if poi application has reached the employment section"
-    )
-    veteran_status: bool = Field(
-        description="Indicates if poi application has reached the veteran_status section"
-    )
-    education: bool = Field(
-        description="Indicates if poi application has reached the education section"
-    )
-    case_file: bool = Field(
-        description="Indicates if poi application has reached the case_file section"
-    )
-    fingerprints: bool = Field(
-        description="Indicates if poi application has reached the fingerprints section"
-    )
 
 
 class POISummary(BaseModel):

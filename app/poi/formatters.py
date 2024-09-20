@@ -1,10 +1,8 @@
-from app.common.encryption import EncryptionManager
 from app.core.settings import get_settings
 from app.poi import models
 
 # Globals
 settings = get_settings()
-encrypt_man = EncryptionManager(key=settings.ENCRYPTION_KEY)
 
 
 async def format_offense(offense: models.Offense):
@@ -14,9 +12,9 @@ async def format_offense(offense: models.Offense):
 
     return {
         "id": offense.id,
-        "name": encrypt_man.decrypt_str(data=offense.name),
-        "description": encrypt_man.decrypt_str(data=offense.description),
-        "created_at": encrypt_man.decrypt_datetime(data=offense.created_at),
+        "name": offense.name,
+        "description": offense.description,
+        "created_at": offense.created_at,
     }
 
 
@@ -27,22 +25,7 @@ async def format_offense_summary(offense: models.Offense):
 
     return {
         "id": offense.id,
-        "name": encrypt_man.decrypt_str(data=offense.name),
-    }
-
-
-async def format_poi_application(application: models.POIApplicationProcess):
-    """
-    Format poi application to dict
-    """
-    return {
-        "id": application.id,
-        "other_profile": encrypt_man.decrypt_boolean(application.other_profile),
-        "employment": encrypt_man.decrypt_boolean(application.employment),
-        "veteran_status": encrypt_man.decrypt_boolean(application.veteran_status),
-        "education": encrypt_man.decrypt_boolean(application.education),
-        "case_file": encrypt_man.decrypt_boolean(application.case_file),
-        "fingerprints": encrypt_man.decrypt_boolean(application.fingerprints),
+        "name": offense.name,
     }
 
 
@@ -53,40 +36,25 @@ async def format_poi_base(poi: models.POI):
 
     return {
         "id": poi.id,
-        "pfp": encrypt_man.decrypt_str(poi.pfp_url) if bool(poi.pfp_url) else None,
-        "full_name": encrypt_man.decrypt_str(poi.full_name),
-        "alias": encrypt_man.decrypt_str(poi.alias),
-        "dob": encrypt_man.decrypt_date(poi.dob) if bool(poi.dob) else None,
-        "pob": encrypt_man.decrypt_str(poi.pob) if bool(poi.pob) else None,
-        "nationality": encrypt_man.decrypt_str(poi.nationality)
-        if bool(poi.nationality)
-        else None,
-        "religion": encrypt_man.decrypt_str(poi.religion)
-        if bool(poi.religion)
-        else None,
-        "political_affiliation": encrypt_man.decrypt_str(poi.political_affiliation)
-        if bool(poi.political_affiliation)
-        else None,
-        "tribal_union": encrypt_man.decrypt_str(poi.tribal_union)
-        if bool(poi.tribal_union)
-        else None,
-        "last_seen_date": encrypt_man.decrypt_date(poi.last_seen_date)
-        if bool(poi.last_seen_date)
-        else None,
-        "last_seen_time": encrypt_man.decrypt_time(poi.last_seen_time)
-        if bool(poi.last_seen_time)
-        else None,
-        "is_completed": encrypt_man.decrypt_boolean(poi.is_completed),
-        "is_pinned": encrypt_man.decrypt_boolean(poi.is_pinned),
-        "notes": encrypt_man.decrypt_str(poi.notes) if bool(poi.notes) else None,
+        "pfp": poi.pfp_url,
+        "full_name": poi.full_name,
+        "alias": poi.alias,
+        "dob": poi.dob,
+        "pob": poi.pob,
+        "nationality": poi.nationality,
+        "religion": poi.religion,
+        "political_affiliation": poi.political_affiliation,
+        "tribal_union": poi.tribal_union,
+        "last_seen_date": poi.last_seen_date,
+        "last_seen_time": poi.last_seen_time,
+        "is_pinned": poi.is_pinned,
+        "notes": poi.notes,
         "id_documents": [
             await format_id_document(doc=doc)
             for doc in poi.id_documents
-            if not encrypt_man.decrypt_boolean(doc.is_deleted)
-        ]
-        if poi.id_documents
-        else None,
-        "created_at": encrypt_man.decrypt_datetime(poi.created_at),
+            if not bool(doc.is_deleted)
+        ],
+        "created_at": poi.created_at,
     }
 
 
@@ -97,10 +65,10 @@ async def format_poi_summary(poi: models.POI):
 
     return {
         "id": poi.id,
-        "full_name": encrypt_man.decrypt_str(poi.full_name),
+        "full_name": poi.full_name,
         "convictions": [await format_poi_offense(conv=conv) for conv in poi.offenses],
-        "is_pinned": encrypt_man.decrypt_boolean(poi.is_pinned),
-        "created_at": encrypt_man.decrypt_datetime(poi.created_at),
+        "is_pinned": poi.is_pinned,
+        "created_at": poi.created_at,
     }
 
 
@@ -111,13 +79,9 @@ async def format_poi_offense(conv: models.POIOffense):
     return {
         "id": conv.id,
         "offense": await format_offense_summary(offense=conv.offense),
-        "case_id": encrypt_man.decrypt_str(conv.case_id)
-        if bool(conv.case_id)
-        else None,
-        "date_convicted": encrypt_man.decrypt_date(conv.date_convicted)
-        if bool(conv.date_convicted)
-        else None,
-        "notes": encrypt_man.decrypt_str(conv.notes) if bool(conv.notes) else None,
+        "case_id": conv.case_id,
+        "date_convicted": conv.date_convicted,
+        "notes": conv.notes,
     }
 
 
@@ -145,8 +109,8 @@ async def format_id_document(doc: models.IDDocument):
 
     return {
         "id": doc.id,
-        "type": encrypt_man.decrypt_str(doc.type),
-        "id_number": encrypt_man.decrypt_str(doc.id_number),
+        "type": doc.type,
+        "id_number": doc.id_number,
     }
 
 
@@ -156,14 +120,10 @@ async def format_gsm(gsm: models.GSMNumber):
     """
     return {
         "id": gsm.id,
-        "service_provider": encrypt_man.decrypt_str(gsm.service_provider),
-        "number": encrypt_man.decrypt_str(gsm.number),
-        "last_call_date": encrypt_man.decrypt_date(gsm.last_call_date)
-        if bool(gsm.last_call_date)
-        else None,
-        "last_call_time": encrypt_man.decrypt_time(gsm.last_call_time)
-        if bool(gsm.last_call_time)
-        else None,
+        "service_provider": gsm.service_provider,
+        "number": gsm.number,
+        "last_call_date": gsm.last_call_date,
+        "last_call_time": gsm.last_call_time,
     }
 
 
@@ -171,13 +131,12 @@ async def format_residential_address(address: models.ResidentialAddress):
     """
     Format residential address obj to dict
     """
-    dec = encrypt_man.decrypt_str
     return {
         "id": address.id,
-        "country": dec(address.country),
-        "state": dec(address.state),
-        "city": dec(address.city),
-        "address": dec(address.address) if bool(address.address) else None,
+        "country": address.country,
+        "state": address.state,
+        "city": address.city,
+        "address": address.address,
     }
 
 
@@ -185,24 +144,15 @@ async def format_known_associate(associate: models.KnownAssociate):
     """
     Format known associate obj to dict
     """
-    dec = encrypt_man.decrypt_str
     return {
         "id": associate.id,
-        "full_name": dec(associate.full_name),
-        "known_gsm_numbers": dec(associate.known_gsm_numbers)
-        if bool(associate.known_gsm_numbers)
-        else None,
-        "relationship": dec(associate.relationship),
-        "occupation": dec(associate.occupation) if bool(associate.occupation) else None,
-        "residential_address": dec(associate.residential_address)
-        if bool(associate.residential_address)
-        else None,
-        "last_seen_date": encrypt_man.decrypt_date(associate.last_seen_date)
-        if bool(associate.last_seen_date)
-        else None,
-        "last_seen_time": encrypt_man.decrypt_time(associate.last_seen_time)
-        if bool(associate.last_seen_time)
-        else None,
+        "full_name": associate.full_name,
+        "known_gsm_numbers": associate.known_gsm_numbers,
+        "relationship": associate.relationship,
+        "occupation": associate.occupation,
+        "residential_address": associate.residential_address,
+        "last_seen_date": associate.last_seen_date,
+        "last_seen_time": associate.last_seen_time,
     }
 
 
@@ -212,18 +162,12 @@ async def format_employment_history(history: models.EmploymentHistory):
     """
     return {
         "id": history.id,
-        "company": encrypt_man.decrypt_str(history.company),
-        "employment_type": encrypt_man.decrypt_str(history.employment_type),
-        "from_date": encrypt_man.decrypt_date(history.from_date)
-        if bool(history.from_date)
-        else None,
-        "to_date": encrypt_man.decrypt_date(history.to_date)
-        if bool(history.to_date)
-        else None,
-        "current_job": encrypt_man.decrypt_boolean(history.current_job),
-        "description": encrypt_man.decrypt_str(history.description)
-        if bool(history.description)
-        else None,
+        "company": history.company,
+        "employment_type": history.employment_type,
+        "from_date": history.from_date,
+        "to_date": history.to_date,
+        "current_job": history.current_job,
+        "description": history.description,
     }
 
 
@@ -233,22 +177,14 @@ async def format_veteran_status(status: models.VeteranStatus):
     """
     return {
         "id": status.id,
-        "is_veteran": encrypt_man.decrypt_boolean(status.is_veteran),
-        "section": encrypt_man.decrypt_str(status.section),
-        "location": encrypt_man.decrypt_str(status.location),
-        "id_card": encrypt_man.decrypt_str(status.id_card)
-        if bool(status.id_card)
-        else None,
-        "id_card_issuer": encrypt_man.decrypt_str(status.id_card_issuer)
-        if bool(status.id_card_issuer)
-        else None,
-        "from_date": encrypt_man.decrypt_date(status.from_date)
-        if bool(status.from_date)
-        else None,
-        "to_date": encrypt_man.decrypt_date(status.to_date)
-        if bool(status.to_date)
-        else None,
-        "notes": encrypt_man.decrypt_str(status.notes) if bool(status.notes) else None,
+        "is_veteran": status.is_veteran,
+        "section": status.section,
+        "location": status.location,
+        "id_card": status.id_card,
+        "id_card_issuer": status.id_card_issuer,
+        "from_date": status.from_date,
+        "to_date": status.to_date,
+        "notes": status.notes,
     }
 
 
@@ -258,19 +194,13 @@ async def format_educational_background(education: models.EducationalBackground)
     """
     return {
         "id": education.id,
-        "type": encrypt_man.decrypt_str(education.type),
-        "institute_name": encrypt_man.decrypt_str(education.institute_name),
-        "country": encrypt_man.decrypt_str(education.country),
-        "state": encrypt_man.decrypt_str(education.state),
-        "from_date": encrypt_man.decrypt_date(education.from_date)
-        if bool(education.from_date)
-        else None,
-        "to_date": encrypt_man.decrypt_date(education.to_date)
-        if bool(education.to_date)
-        else None,
-        "current_institute": encrypt_man.decrypt_boolean(education.current_institute)
-        if bool(education.current_institute)
-        else None,
+        "type": education.type,
+        "institute_name": education.institute_name,
+        "country": education.country,
+        "state": education.state,
+        "from_date": education.from_date,
+        "to_date": education.to_date,
+        "current_institute": education.current_institute,
     }
 
 
@@ -280,15 +210,11 @@ async def format_frequented_spot(spot: models.FrequentedSpot):
     """
     return {
         "id": spot.id,
-        "country": encrypt_man.decrypt_str(spot.country),
-        "state": encrypt_man.decrypt_str(spot.state),
-        "lga": encrypt_man.decrypt_str(spot.lga),
-        "address": encrypt_man.decrypt_str(spot.address),
-        "from_date": encrypt_man.decrypt_date(spot.from_date)
-        if bool(spot.from_date)
-        else None,
-        "to_date": encrypt_man.decrypt_date(spot.to_date)
-        if bool(spot.to_date)
-        else None,
-        "notes": encrypt_man.decrypt_str(spot.notes) if bool(spot.notes) else None,
+        "country": spot.country,
+        "state": spot.state,
+        "lga": spot.lga,
+        "address": spot.address,
+        "from_date": spot.from_date,
+        "to_date": spot.to_date,
+        "notes": spot.notes,
     }

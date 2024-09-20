@@ -78,6 +78,36 @@ class POICreate(BaseModel):
     # fingerprints: "CreateFingerprint" = Field(description="The poi's fingerprints")
 
 
+class CreatePOIBaseInformation(BaseModel):
+    """
+    Create schema for poi base information
+    """
+
+    # Basic Information
+    pfp: str | None = Field(default=None, description="Profile picture URL")
+    full_name: str = Field(description="Full name of the POI")
+    alias: str = Field(description="Alias of the POI")
+    dob: date | None = Field(default=None, description="Date of birth")
+    state_of_origin: str | None = Field(default=None, description="The state of origin")
+    lga_of_origin: str | None = Field(default=None, description="The lga of the poi")
+    district_of_origin: str | None = Field(
+        default=None, description="The district of the poi"
+    )
+    pob: str | None = Field(default=None, description="Place of birth")
+    nationality: str | None = Field(default=None, description="Nationality")
+    religion: str | None = Field(default=None, description="Religion")
+    political_affiliation: str | None = Field(
+        default=None, description="Political affiliation"
+    )
+    tribal_union: str | None = Field(default=None, description="Tribal union")
+    last_seen_date: date | None = Field(default=None, description="Last seen date")
+    last_seen_time: time | None = Field(default=None, description="Last seen time")
+    notes: str | None = Field(default=None, description="additional notes on the poi")
+    id_documents: list["CreateIDDocument"] | None = Field(
+        default=None, description="The list of ID Documents"
+    )
+
+
 class CreateIDDocument(BaseModel):
     """
     Create schema for ID Documents

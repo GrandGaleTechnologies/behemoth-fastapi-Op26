@@ -22,15 +22,6 @@ class POICRUD(CRUDBase[models.POI]):
         super().__init__(models.POI, db)
 
 
-class POIApplicationProcess(CRUDBase[models.POIApplicationProcess]):
-    """
-    CRUD Class for poi application processes
-    """
-
-    def __init__(self, db: Session):
-        super().__init__(models.POIApplicationProcess, db)
-
-
 class IDDocumentCRUD(CRUDBase[models.IDDocument]):
     """
     CRUD Class for ID Documents

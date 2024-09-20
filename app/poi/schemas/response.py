@@ -9,7 +9,6 @@ from app.poi.schemas.base import (
     IDDocument,
     KnownAssociate,
     Offense,
-    POIApplicationProcess,
     POIBaseInformation,
     POIOffense,
     POIOtherInformation,
@@ -44,17 +43,6 @@ class PaginatedOffenseListResponse(PaginatedResponseSchema):
 
     msg: str = Field(default="Successfully retrieved offenses")
     data: list[Offense] = Field(description="The list of offenses")
-
-
-class POIApplicationProcessResponse(ResponseSchema):
-    """
-    Response schema for poi application process
-    """
-
-    msg: str = Field(default="Succesfully retreieved poi application process")
-    data: POIApplicationProcess = Field(
-        description="The detais of the application process"
-    )
 
 
 class POIPinResponse(ResponseSchema):
