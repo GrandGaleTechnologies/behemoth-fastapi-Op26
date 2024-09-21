@@ -163,7 +163,7 @@ async def create_poi(user: user_models.User, data: create.POICreate, db: Session
             try:
                 base64_str = data.pfp.split(",", 1)[1]
                 img_data = base64.b64decode(base64_str)
-            except binascii.Error:
+            except (binascii.Error, Exception):
                 raise BadRequest("Invalid pfp format", loc=["body", "pfp"])
 
             # Save data to file
