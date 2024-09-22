@@ -291,7 +291,7 @@ async def edit_poi(
     changelog = ""
 
     # edit info
-    if data.pfp == poi.pfp_url:
+    if data.pfp and not data.pfp.startswith("data:image"):
         data.pfp = None
 
     poi_dict = poi.__dict__
