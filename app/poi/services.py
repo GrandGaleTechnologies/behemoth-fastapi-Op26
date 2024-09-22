@@ -291,6 +291,9 @@ async def edit_poi(
     changelog = ""
 
     # edit info
+    if data.pfp == poi.pfp_url:
+        data.pfp = None
+
     poi_dict = poi.__dict__
     for field, value in data.model_dump(exclude=["pfp"], exclude_none=True).items():  # type: ignore
         if poi_dict[field] and poi_dict[field] != value:
