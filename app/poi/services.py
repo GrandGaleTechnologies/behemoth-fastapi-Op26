@@ -305,11 +305,11 @@ async def edit_poi(
 
     # Create file for pfp
     if data.pfp:
-        # Decode string
         try:
-            img_data = base64.b64decode(data.pfp)
-        except binascii.Error:
-            raise BadRequest("Invalid pfp url bytes", loc=["body", "pfp"])
+            base64_str = data.pfp.split(",", 1)[1]
+            img_data = base64.b64decode(base64_str)
+        except (binascii.Error, Exception):
+            raise BadRequest("Invalid pfp format", loc=["body", "pfp"])
 
         # Save data to file
         loc = f"{settings.UPLOAD_DIR}/poi/{poi.id}/pfp/pfp.jpeg"

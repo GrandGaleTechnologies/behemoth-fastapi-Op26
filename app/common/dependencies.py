@@ -19,4 +19,5 @@ def pagination_params(
     order_by: Literal["asc", "desc"] = "desc",
 ):
     """Helper Dependency for pagination"""
+    order_by = "desc"
     return PaginationParamsType(q=q, page=page, size=size, order_by=order_by)

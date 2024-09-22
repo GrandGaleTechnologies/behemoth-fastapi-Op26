@@ -235,8 +235,8 @@ class VeteranStatus(DBBase):
         Integer, ForeignKey("pois.id", ondelete="CASCADE"), unique=True, nullable=False
     )
     is_veteran = Column(Boolean, default=False, nullable=False)
-    section = Column(String, nullable=False)
-    location = Column(String, nullable=False)
+    section = Column(String, nullable=True)
+    location = Column(String, nullable=True)
     id_card = Column(String, nullable=True)
     id_card_issuer = Column(String, nullable=True)
     from_date = Column(Date, nullable=True)
