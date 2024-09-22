@@ -215,8 +215,8 @@ class VeteranStatus(BaseModel):
 
     id: int = Field(description="Unique identifier for veteran status")
     is_veteran: bool = Field(description="Is the POI a veteran")
-    section: str = Field(description="Section or unit")
-    location: str = Field(description="Location of service")
+    section: str | None = Field(description="Section or unit")
+    location: str | None = Field(description="Location of service")
     id_card: str | None = Field(default=None, description="ID card")
     id_card_issuer: str | None = Field(default=None, description="ID card issuer")
     from_date: date | None = Field(default=None, description="Service start date")
