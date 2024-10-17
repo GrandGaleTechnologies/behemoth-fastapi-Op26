@@ -69,7 +69,7 @@ async def route_poi_list(
     curr_user: CurrentUser,
     db: DatabaseSession,
     gsm: str | None = None,
-    is_pinned: bool | None = None,
+    is_pinned: bool = False,
 ):
     """
     This endpoint returns the paginated list of pois

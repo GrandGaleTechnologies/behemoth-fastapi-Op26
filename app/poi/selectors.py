@@ -161,7 +161,7 @@ async def get_paginated_poi_list(
         )
 
     # Check for pin status
-    if is_pinned in [True, False]:
+    if is_pinned:
         qs = qs.filter_by(is_pinned=is_pinned)
 
     # Paginate
