@@ -54,7 +54,6 @@ async def route_poi_create(
     # Create poi base information
     poi = await services.create_poi(user=curr_user, data=poi_in, db=db)
 
-    print(poi.pfp_url)
     return {"data": await format_poi_base(poi=poi)}
 
 

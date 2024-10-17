@@ -1,4 +1,5 @@
 @echo off
-cd D:\dss-poi_backend
+cd D:\dss-poi_backe
 call .venv\Scripts\activate
-python fastapi_server.py
+fastapi dev
+timeout /t 2 /nobreak >nul
